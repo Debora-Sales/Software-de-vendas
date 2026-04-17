@@ -30,10 +30,8 @@ class SistemaXoSujeira:
             CREATE TABLE IF NOT EXISTS produtos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome VARCHAR(100) NOT NULL,
-                validade DATE,
                 quantidade INT DEFAULT 0,
                 categoria VARCHAR(100),
-                lote VARCHAR(20),
                 preco_custo DECIMAL(10,2),
                 preco_venda DECIMAL(10,2),
                 estoque_minimo INT

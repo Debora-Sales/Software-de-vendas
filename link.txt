@@ -4,3 +4,91 @@ git clone https://gitlab.com/Debora-Sales/projeto-integrador.git
 git checkout -b feature-home
 
 git checkout -b "nome-do-braço"
+
+
+
+                     subindo repositórios no gitlab
+
+git init
+
+git remote add origin (link do repositório)
+
+git add .
+
+git commit -m "qualquer nome ou oq vc tá subindo em específicio"
+
+git push (aqui você irá colocar o comando que aparecerá em seguida)
+
+
+
+                    adicionando novo arquivo no repositório 
+
+
+git init
+
+git remote add origin (link do repositório)
+
+git checkout -b feature-home 
+
+code .
+
+git add .
+
+git status
+
+git commit -m "qualquer nome ou oq vc tá subindo em específicio"
+
+git push (aqui você irá colocar o comando que aparecerá em seguida)
+
+
+
+                  adicionando novo arquivo no repositório (fora da arvore principal) 
+
+git checkout main
+
+git checkout -b feature-about
+
+git add .
+
+git status 
+
+git commit -m "Exemplo: Criação da pagina sobre"
+
+git push (aqui você irá colocar o comando que aparecerá em seguida)
+
+
+
+                   adicionando novo arquivo no repositório(dentro da arvore principal)
+
+git checkout -b main
+
+git add .\NomeDoArquivo
+
+git status
+
+git commit -m "Alguma coisa relacionada ao seu arquivo"
+
+git push 
+
+git push (o código completo)
+
+
+
+                       Colocando todos os repositórios na main (pasta principal)
+
+git branch -a
+
+git merge feature-about
+
+git merge feature-home
+
+git push origin main
+
+
+
+
+
+
+
+
+
