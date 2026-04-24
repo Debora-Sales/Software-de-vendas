@@ -1,9 +1,23 @@
 git clone https://gitlab.com/Debora-Sales/projeto-integrador.git
 
 
+--- Subir arquivos na feature-home ---
+
+git branch
+git switch feature-home 
+git add .
+gir commit -m 'novas atualizaçoes' 
+git push 
+
+------------------------------------------------------------
+
+
 git checkout -b feature-home
 
 git checkout -b "nome-do-braço"
+
+git checkout -b feature-cliente 
+
 
 
 
