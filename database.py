@@ -1,4 +1,5 @@
 import sqlite3  
+from tkinter import messagebox
 
 def conectar(): 
 #Cria a ponte com o arquivo local do banco de dados
@@ -24,3 +25,51 @@ def realizar_login(login_digitado, senha_digitada):
         if resultado: 
             return resultado # Retorna o perfil (ex: 'Admin' ou 'Usuário') 
     return None # Retorna vazio se a senha estiver errada
+
+#funções da janela clientes
+
+def salvar_cliente(nome, endereco, telefone, cpf, cnpj, razao_social, email):
+    """Insere um novo cliente no banco de dados."""
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            comando = """
+                INSERT INTO Clientes (nome, endereco, telefone, cpf, cnpj, razao_social, email)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """
+            cursor.execute(comando, (nome, endereco, telefone, cpf, cnpj, razao_social, email))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            messagebox.showerror("Erro SQL", f"Erro ao salvar: {e}")
+            return False
+    return False
+
+def buscar_cliente_por_id(id_cliente):
+    """Procura um cliente no Azure pelo ID e retorna os seus dados."""
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            # Comando SQL para selecionar todos os dados obrigatórios do cliente (RN02)
+            comando = "SELECT nome, endereco, telefone, cpf, cnpj, razao_social, email FROM Clientes WHERE id = ?"
+            cursor.execute(comando, (id_cliente,))
+           
+            resultado = cursor.fetchone()
+            conn.close()
+           
+            if resultado:
+                # Retornamos os dados organizados
+                return {
+                    "nome": resultado[0], "endereco": resultado[1], "telefone": resultado[2],
+                    "cpf": resultado[3], "cnpj": resultado[4], "razao_social": resultado[5],
+                    "email": resultado[6]
+                }
+            else:
+                return None
+        except Exception as e:
+            messagebox.showerror("Erro SQL", f"Erro ao salvar: {e}")
+            return None
+    return None

@@ -20,11 +20,11 @@ def acao_login(event=None):
     perfil = realizar_login(usuario, senha)
 
     if perfil: 
-        messagebox.showinfo("Sucesso", f"Bem-vindo! Perfil: {perfil}") 
+        messagebox.showinfo("Sucesso", f"Bem-vindo! Perfil: {perfil[0]}") 
         janela.destroy() # Fecha a janela de login
         
         # Inicia o menu que está no outro arquivo
-        app_menu = abrir_menu()
+        app_menu = abrir_menu(perfil[0])
         app_menu.mainloop()
     else: 
         messagebox.showerror("Erro", "Usuário ou senha inválidos.")

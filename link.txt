@@ -11,6 +11,24 @@ git push
 
 ------------------------------------------------------------
 
+--- Subir arquivos ---
+
+git branch
+git add .
+gir commit -m 'novas atualizaçoes' 
+git push 
+
+------------------------------------------------------------
+
+    --- puxar arquivos da feature-home ---
+
+git switch feature-home
+git pull
+git switch feature-(nome da sua parte, ex: produto/venda/cliente)
+
+------------------------------------------------------------
+
+
 
 git checkout -b feature-home
 
