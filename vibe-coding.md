@@ -62,3 +62,50 @@ Antes de considerar uma funcionalidade concluída, valide:
 - [ ] O responsável (perfil de acesso) está identificado?
 - [ ] Todos os dados obrigatórios de entrada foram validados pelo sistema?
 - [ ] Existem travas de segurança para evitar erros humanos (Ex: venda de produto vencido)?
+
+---
+
+## Sprit 7
+
+Criar botão de edição de cadastro de produtos na seção de produtos
+
+---
+
+## Sprint 8 
+
+Criação de botão de exclusão de produto na seção de produtos
+
+---
+
+## Sprint 9 
+
+Criação de botão para limpar o formulário de cadastro de produtos na seção produtos
+
+---
+
+## Sprint 10
+
+Criação de alerta de estoque mínimo na seção de produtos onde a mensagem aparecerá na area de buscar produtos por ID
+
+
+## Sprit 11
+
+Criar botão de edição de cadastro de clientes na seção de clientes
+
+---
+
+## Sprint 12
+
+Criação de botão de exclusão de clientes na seção de clientes
+
+---
+
+## Sprint 13 
+
+Criação de botão para limpar o formulário de cadastro de clientes na seção clientes
+
+---
+
+## Nota 
+
+Ao finalizar um cadastro, salvar dados, a janela não pode se fechar
