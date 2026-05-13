@@ -32,48 +32,61 @@ class JanelaClientes(ctk.CTkToplevel):
         self.tabview = ctk.CTkTabview(self, width=650, height=600)
         self.tabview.pack(padx=20, pady=10, fill="both", expand=True)
         
-        self.tab_cadastro = self.tabview.add("Cadastrar Cliente")
+        self.tab_pf = self.tabview.add("Pessoa Física")
+        self.tab_pj = self.tabview.add("Pessoa Jurídica")
         self.tab_busca = self.tabview.add("Buscar Cliente")
 
-        # --- UI DA ABA CADASTRO ---
-        
-        self.ent_nome = self.criar_entry(self.tab_cadastro, "Nome / Razão Social")
-        self.ent_endereco = self.criar_entry(self.tab_cadastro, "Endereço Completo")
-        self.ent_telefone = self.criar_entry(self.tab_cadastro, "Telefone de Contato")
-        self.ent_cpf = self.criar_entry(self.tab_cadastro, "CPF")
-        self.ent_cnpj = self.criar_entry(self.tab_cadastro, "CNPJ")
-        self.ent_razao_social = self.criar_entry(self.tab_cadastro, "Razão Social (opcional)")
-        self.ent_email = self.criar_entry(self.tab_cadastro, "E-mail")
+        # --- UI PESSOA FÍSICA ---
+        self.ent_nome_pf = self.criar_entry(self.tab_pf, "Nome Completo")
+        self.ent_endereco_pf = self.criar_entry(self.tab_pf, "Endereço")
+        self.ent_telefone_pf = self.criar_entry(self.tab_pf, "Telefone")
+        self.ent_cpf_pf = self.criar_entry(self.tab_pf, "CPF")
+        self.ent_email_pf = self.criar_entry(self.tab_pf, "E-mail")
 
-        # Posicionamento
-        for entry in [self.ent_nome, self.ent_endereco, self.ent_telefone, self.ent_cpf, self.ent_cnpj, self.ent_razao_social, self.ent_email]:
+        for entry in [self.ent_nome_pf, self.ent_endereco_pf, self.ent_telefone_pf, self.ent_cpf_pf, self.ent_email_pf]:
             entry.pack(pady=8)
 
-        self.frame_botoes_cadastro = ctk.CTkFrame(self.tab_cadastro, fg_color="transparent")
-        self.frame_botoes_cadastro.pack(pady=15)
-
-        self.btn_salvar = ctk.CTkButton(
-            self.frame_botoes_cadastro,
-            text="Salvar Cliente",
+        self.btn_salvar_pf = ctk.CTkButton(
+            self.tab_pf,
+            text="Salvar Pessoa Física",
             height=45,
             font=("Roboto", 16, "bold"),
             fg_color="green",
-            hover_color="darkgreen",
-            command=self.validar_e_salvar
+            command=lambda: self.validar_e_salvar("PF")
         )
-        self.btn_salvar.pack(side="left", padx=10)
+        self.btn_salvar_pf.pack(pady=20)
 
-        # Sprint 13: Botão Limpar Campos
+        # --- UI PESSOA JURÍDICA ---
+        self.ent_nome_pj = self.criar_entry(self.tab_pj, "Nome Fantasia")
+        self.ent_razao_pj = self.criar_entry(self.tab_pj, "Razão Social")
+        self.ent_cnpj_pj = self.criar_entry(self.tab_pj, "CNPJ")
+        self.ent_endereco_pj = self.criar_entry(self.tab_pj, "Endereço Comercial")
+        self.ent_telefone_pj = self.criar_entry(self.tab_pj, "Telefone")
+        self.ent_email_pj = self.criar_entry(self.tab_pj, "E-mail")
+
+        for entry in [self.ent_nome_pj, self.ent_razao_pj, self.ent_cnpj_pj, self.ent_endereco_pj, self.ent_telefone_pj, self.ent_email_pj]:
+            entry.pack(pady=8)
+
+        self.btn_salvar_pj = ctk.CTkButton(
+            self.tab_pj,
+            text="Salvar Pessoa Jurídica",
+            height=45,
+            font=("Roboto", 16, "bold"),
+            fg_color="green",
+            command=lambda: self.validar_e_salvar("PJ")
+        )
+        self.btn_salvar_pj.pack(pady=20)
+
+        # --- Botão Limpar Global (em ambas as abas de cadastro) ---
         self.btn_limpar = ctk.CTkButton(
-            self.frame_botoes_cadastro,
-            text="Limpar Campos",
+            self,
+            text="Limpar Formulário",
             height=45,
             font=("Roboto", 16, "bold"),
             fg_color="gray",
-            hover_color="dimgray",
             command=self.limpar_campos
         )
-        self.btn_limpar.pack(side="left", padx=10)
+        self.btn_limpar.pack(pady=10)
 
         # --- UI DA ABA BUSCA ---
         
@@ -139,15 +152,13 @@ class JanelaClientes(ctk.CTkToplevel):
         )
 
     def limpar_campos(self):
-        self.ent_nome.delete(0, "end")
-        self.ent_endereco.delete(0, "end")
-        self.ent_telefone.delete(0, "end")
-        self.ent_cpf.delete(0, "end")
-        self.ent_cnpj.delete(0, "end")
-        self.ent_razao_social.delete(0, "end")
-        self.ent_email.delete(0, "end")
+        for e in [self.ent_nome_pf, self.ent_endereco_pf, self.ent_telefone_pf, self.ent_cpf_pf, self.ent_email_pf,
+                  self.ent_nome_pj, self.ent_razao_pj, self.ent_cnpj_pj, self.ent_endereco_pj, self.ent_telefone_pj, self.ent_email_pj]:
+            e.delete(0, "end")
+        
         self.id_cliente_editando = None
-        self.btn_salvar.configure(text="Salvar Cliente", fg_color="green")
+        self.btn_salvar_pf.configure(text="Salvar Pessoa Física", fg_color="green")
+        self.btn_salvar_pj.configure(text="Salvar Pessoa Jurídica", fg_color="green")
 
     def buscar_cliente(self):
         id_digitado = self.ent_busca_id.get()
@@ -172,15 +183,24 @@ class JanelaClientes(ctk.CTkToplevel):
         if self.cliente_atual:
             self.limpar_campos()
             self.id_cliente_editando = self.cliente_atual['id']
-            self.ent_nome.insert(0, self.cliente_atual['nome'])
-            self.ent_endereco.insert(0, self.cliente_atual['endereco'])
-            self.ent_telefone.insert(0, self.cliente_atual['telefone'])
-            self.ent_cpf.insert(0, self.cliente_atual['cpf'] or "")
-            self.ent_cnpj.insert(0, self.cliente_atual['cnpj'] or "")
-            self.ent_razao_social.insert(0, self.cliente_atual['razao_social'] or "")
-            self.ent_email.insert(0, self.cliente_atual['email'])
-            self.btn_salvar.configure(text="Atualizar Cliente", fg_color="blue")
-            self.tabview.set("Cadastrar Cliente")
+            
+            if self.cliente_atual['cpf']:
+                self.tabview.set("Pessoa Física")
+                self.ent_nome_pf.insert(0, self.cliente_atual['nome'])
+                self.ent_endereco_pf.insert(0, self.cliente_atual['endereco'])
+                self.ent_telefone_pf.insert(0, self.cliente_atual['telefone'])
+                self.ent_cpf_pf.insert(0, self.cliente_atual['cpf'])
+                self.ent_email_pf.insert(0, self.cliente_atual['email'])
+                self.btn_salvar_pf.configure(text="Atualizar PF", fg_color="blue")
+            else:
+                self.tabview.set("Pessoa Jurídica")
+                self.ent_nome_pj.insert(0, self.cliente_atual['nome'])
+                self.ent_razao_pj.insert(0, self.cliente_atual['razao_social'] or "")
+                self.ent_cnpj_pj.insert(0, self.cliente_atual['cnpj'] or "")
+                self.ent_endereco_pj.insert(0, self.cliente_atual['endereco'])
+                self.ent_telefone_pj.insert(0, self.cliente_atual['telefone'])
+                self.ent_email_pj.insert(0, self.cliente_atual['email'])
+                self.btn_salvar_pj.configure(text="Atualizar PJ", fg_color="blue")
 
     def confirmar_exclusao(self):
         if self.cliente_atual and messagebox.askyesno("Confirmar Exclusão", f"Deseja excluir o cliente {self.cliente_atual['nome']}?"):
@@ -193,24 +213,39 @@ class JanelaClientes(ctk.CTkToplevel):
                 self.txt_resultado.insert("0.0", "Os detalhes do cliente aparecerão aqui...")
                 self.txt_resultado.configure(state="disabled")
 
-    def validar_e_salvar(self):
-        nome = self.ent_nome.get()
-        endereco = self.ent_endereco.get()
-        telefone = self.ent_telefone.get()
-        email = self.ent_email.get()
-        
-        if not all([nome, endereco, telefone, email]):
-            messagebox.showwarning("Campos Obrigatórios", "Nome, Endereço, Telefone e E-mail são obrigatórios (RN02).")
+    def validar_e_salvar(self, tipo):
+        if tipo == "PF":
+            dados = {
+                "nome": self.ent_nome_pf.get(),
+                "endereco": self.ent_endereco_pf.get(),
+                "telefone": self.ent_telefone_pf.get(),
+                "cpf": self.ent_cpf_pf.get(),
+                "cnpj": "",
+                "razao_social": "",
+                "email": self.ent_email_pf.get()
+            }
+        else:
+            dados = {
+                "nome": self.ent_nome_pj.get(),
+                "endereco": self.ent_endereco_pj.get(),
+                "telefone": self.ent_telefone_pj.get(),
+                "cpf": "",
+                "cnpj": self.ent_cnpj_pj.get(),
+                "razao_social": self.ent_razao_pj.get(),
+                "email": self.ent_email_pj.get()
+            }
+
+        if not all([dados["nome"], dados["endereco"], dados["telefone"], dados["email"]]):
+            messagebox.showwarning("Campos Obrigatórios", "Nome, Endereço, Telefone e E-mail são obrigatórios.")
             return
-            
+
         if self.id_cliente_editando:
-            sucesso = atualizar_cliente_db(self.id_cliente_editando, nome, endereco, telefone, self.ent_cpf.get(), self.ent_cnpj.get(), self.ent_razao_social.get(), email)
-            if sucesso:
-                messagebox.showinfo("Sucesso", "Dados do cliente atualizados!")
+            if atualizar_cliente_db(self.id_cliente_editando, **dados):
+                messagebox.showinfo("Sucesso", "Cadastro atualizado!")
                 self.limpar_campos()
                 self.tabview.set("Buscar Cliente")
         else:
-            id_gerado = salvar_cliente(nome, endereco, telefone, self.ent_cpf.get(), self.ent_cnpj.get(), self.ent_razao_social.get(), email)
+            id_gerado = salvar_cliente(**dados)
             if id_gerado:
-                messagebox.showinfo("Sucesso", f"Cliente cadastrado com ID {id_gerado}.")
+                messagebox.showinfo("Sucesso", f"Cadastrado com ID {id_gerado}.")
                 self.limpar_campos()

@@ -3,7 +3,8 @@ import os
 from tkinter import messagebox
 from PIL import Image
 from clientes import JanelaClientes
-from produtos_ui import JanelaProdutos
+from produtos import JanelaProdutos
+from funcionarios import JanelaFuncionarios
 
 
 class abrir_menu(ctk.CTkToplevel):
@@ -113,10 +114,7 @@ class abrir_menu(ctk.CTkToplevel):
         )
 
     def abrir_funcionarios(self):
-        messagebox.showinfo(
-            "Funcionários",
-            "Módulo de funcionários em desenvolvimento."
-        )
+        JanelaFuncionarios(self)
 
     def abrir_relatorios(self):
         messagebox.showinfo(

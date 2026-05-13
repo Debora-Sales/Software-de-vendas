@@ -109,3 +109,60 @@ Criação de botão para limpar o formulário de cadastro de clientes na seção
 ## Nota 
 
 Ao finalizar um cadastro, salvar dados, a janela não pode se fechar
+
+---
+
+# Nota 1
+
+No cadastro de clientes os campos de CPF e CNPJ e Razão social foram desbloqueados. Necessário concertar.
+
+---
+
+## Script 14
+
+Criação da janela Funcionários
+
+## Script 15
+
+Os IDs devem ser registrados com base de 5 números aleatórios que não se repetem
+
+## Script 16 
+
+As guias devem ter os campos "Nome completo", "CPF", "RG", "Data de nascimento", "Estado civil", "Endereço", "Cargo", "Salário"
+
+## Script 17
+
+Cancele a busca de ID dos funcionários com 5 dígitos aleatórios e volte a criar normalmente os IDs com 1 dígito
+
+
+## Script 18
+
+Crie um campo que criará a matricula dos funcionários com 5 dígitos de forma aleatória no banco de dados.
+
+---
+
+## Script 19 
+
+Na seção Clientes, deverá ser necessário mais uma janela para cadastro dos clientes por CPF (Pessoa Física), que de preferência deverá ficar ao lado esquerdo do botão "Buscar Clientes".
+
+## Script 20
+
+Mescle a pasta produtos_ui.py com a produtos.py
+
+---
+
+## Script 21
+
+Mescle a pasta funcionarios_ui.py com a funcionarios.py
+
+---
+
+## Script 22
+
+Faça o código ficar coerente e funcional
+
+---
+
+## Script 23 
+
+A erros no código, corrija

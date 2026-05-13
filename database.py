@@ -1,5 +1,6 @@
 import sqlite3
 from tkinter import messagebox
+import random
 
 DB_NAME = "xo_sujeira.db"
 
@@ -54,6 +55,21 @@ def criar_tabelas():
         )
         """)
         
+        # Sprint 14 & 16: Tabela de Funcionários
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS funcionarios (
+            id INTEGER PRIMARY KEY, -- Script 15: ID de 5 números aleatórios
+            nome TEXT NOT NULL,
+            cpf TEXT NOT NULL,
+            rg TEXT,
+            nascimento TEXT,
+            estado_civil TEXT,
+            endereco TEXT,
+            cargo TEXT,
+            salario REAL
+        )
+        """)
+
         cursor.execute("SELECT * FROM usuarios WHERE nome = ?", ("admin",))
 
         if not cursor.fetchone():
@@ -318,4 +334,96 @@ def deletar_cliente_db(id_cliente):
         except Exception as e:
             messagebox.showerror("Erro SQL", f"Erro ao excluir cliente: {e}")
             return False
+    return False
+
+# --- FUNÇÕES PARA FUNCIONÁRIOS (Sprints 14, 15, 16) ---
+
+def gerar_id_funcionario():
+    """Script 15: Gera um ID de 5 números aleatórios que não se repete."""
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        while True:
+            novo_id = random.randint(10000, 99999)
+            cursor.execute("SELECT id FROM funcionarios WHERE id = ?", (novo_id,))
+            if not cursor.fetchone():
+                conn.close()
+                return novo_id
+    return None
+
+def salvar_funcionario(nome, cpf, rg, nascimento, estado_civil, endereco, cargo, salario):
+    id_gerado = gerar_id_funcionario()
+    if id_gerado is None:
+        messagebox.showerror("Erro", "Não foi possível gerar um ID único para o funcionário.")
+        return None
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            comando = """
+            INSERT INTO funcionarios (id, nome, cpf, rg, nascimento, estado_civil, endereco, cargo, salario)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            cursor.execute(comando, (id_gerado, nome, cpf, rg, nascimento, estado_civil, endereco, cargo, salario))
+            conn.commit()
+            conn.close()
+            return id_gerado
+        except Exception as e:
+            messagebox.showerror("Erro SQL", f"Erro ao salvar funcionário: {e}")
+            return None
+    return None
+
+def buscar_funcionario_por_id_func(id_func): # Busca por ID
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM funcionarios WHERE id = ?", (id_func,))
+            res = cursor.fetchone()
+            conn.close()
+            if res:
+                return {
+                    "id": res[0],
+                    "nome": res[1],
+                    "cpf": res[2],
+                    "rg": res[3],
+                    "nascimento": res[4],
+                    "estado_civil": res[5],
+                    "endereco": res[6],
+                    "cargo": res[7],
+                    "salario": res[8]
+                }
+        except Exception as e:
+            messagebox.showerror("Erro SQL", f"Erro ao buscar funcionário: {e}")
+    return None
+
+def atualizar_funcionario_db(id_func, nome, cpf, rg, nascimento, estado_civil, endereco, cargo, salario): # Atualiza por ID
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            comando = """
+            UPDATE funcionarios SET
+                nome=?, cpf=?, rg=?, nascimento=?, estado_civil=?, endereco=?, cargo=?, salario=?
+            WHERE id=?
+            """
+            cursor.execute(comando, (nome, cpf, rg, nascimento, estado_civil, endereco, cargo, salario, id_func))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            messagebox.showerror("Erro SQL", f"Erro ao atualizar funcionário: {e}")
+    return False
+
+def deletar_funcionario_db(id_func): # Deleta por ID
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM funcionarios WHERE id = ?", (id_func,))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            messagebox.showerror("Erro SQL", f"Erro ao excluir funcionário: {e}")
     return False
