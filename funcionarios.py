@@ -29,14 +29,13 @@ class JanelaFuncionarios(ctk.CTkToplevel):
 
         self.ent_nome = self.criar_entry(self.tab_cad, "Nome Completo")
         self.ent_cpf = self.criar_entry(self.tab_cad, "CPF")
-        self.ent_rg = self.criar_entry(self.tab_cad, "RG")
         self.ent_nasc = self.criar_entry(self.tab_cad, "Data de Nascimento (DD/MM/AAAA)")
         self.ent_civil = self.criar_entry(self.tab_cad, "Estado Civil")
         self.ent_end = self.criar_entry(self.tab_cad, "Endereço")
         self.ent_cargo = self.criar_entry(self.tab_cad, "Cargo")
         self.ent_salario = self.criar_entry(self.tab_cad, "Salário (Ex: 2500.00)")
 
-        for e in [self.ent_nome, self.ent_cpf, self.ent_rg, self.ent_nasc, self.ent_civil, self.ent_end, self.ent_cargo, self.ent_salario]:
+        for e in [self.ent_nome, self.ent_cpf, self.ent_nasc, self.ent_civil, self.ent_end, self.ent_cargo, self.ent_salario]:
             e.pack(pady=5)
 
         self.btn_salvar = ctk.CTkButton(self.tab_cad, text="Salvar Funcionário", fg_color="green", command=self.validar_e_salvar)
@@ -64,7 +63,7 @@ class JanelaFuncionarios(ctk.CTkToplevel):
         return ctk.CTkEntry(master, placeholder_text=txt, width=450, height=35)
 
     def limpar(self):
-        for e in [self.ent_nome, self.ent_cpf, self.ent_rg, self.ent_nasc, self.ent_civil, self.ent_end, self.ent_cargo, self.ent_salario]:
+        for e in [self.ent_nome, self.ent_cpf, self.ent_nasc, self.ent_civil, self.ent_end, self.ent_cargo, self.ent_salario]:
             e.delete(0, "end")
         self.id_editando = None
         self.btn_salvar.configure(text="Salvar Funcionário", fg_color="green")
@@ -92,7 +91,6 @@ class JanelaFuncionarios(ctk.CTkToplevel):
             self.id_editando = self.func_atual['id']
             self.ent_nome.insert(0, self.func_atual['nome'])
             self.ent_cpf.insert(0, self.func_atual['cpf'])
-            self.ent_rg.insert(0, self.func_atual['rg'] or "")
             self.ent_nasc.insert(0, self.func_atual['nascimento'] or "")
             self.ent_civil.insert(0, self.func_atual['estado_civil'] or "")
             self.ent_end.insert(0, self.func_atual['endereco'] or "")
@@ -119,8 +117,8 @@ class JanelaFuncionarios(ctk.CTkToplevel):
             return
 
         if self.id_editando:
-            if atualizar_funcionario_db(self.id_editando, nome, cpf, self.ent_rg.get(), self.ent_nasc.get(), self.ent_civil.get(), self.ent_end.get(), self.ent_cargo.get(), salario):
+            if atualizar_funcionario_db(self.id_editando, nome, cpf, self.ent_nasc.get(), self.ent_civil.get(), self.ent_end.get(), self.ent_cargo.get(), salario):
                 messagebox.showinfo("Sucesso", "Atualizado!"); self.limpar(); self.tabview.set("Buscar/Editar")
         else:
-            novo_id = salvar_funcionario(nome, cpf, self.ent_rg.get(), self.ent_nasc.get(), self.ent_civil.get(), self.ent_end.get(), self.ent_cargo.get(), salario)
+            novo_id = salvar_funcionario(nome, cpf, self.ent_nasc.get(), self.ent_civil.get(), self.ent_end.get(), self.ent_cargo.get(), salario)
             if novo_id: messagebox.showinfo("Sucesso", f"Cadastrado! ID: {novo_id}"); self.limpar()

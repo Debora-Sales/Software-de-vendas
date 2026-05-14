@@ -61,7 +61,6 @@ def criar_tabelas():
             id INTEGER PRIMARY KEY, -- Script 15: ID de 5 números aleatórios
             nome TEXT NOT NULL,
             cpf TEXT NOT NULL,
-            rg TEXT,
             nascimento TEXT,
             estado_civil TEXT,
             endereco TEXT,
@@ -351,7 +350,7 @@ def gerar_id_funcionario():
                 return novo_id
     return None
 
-def salvar_funcionario(nome, cpf, rg, nascimento, estado_civil, endereco, cargo, salario):
+def salvar_funcionario(nome, cpf, nascimento, estado_civil, endereco, cargo, salario):
     id_gerado = gerar_id_funcionario()
     if id_gerado is None:
         messagebox.showerror("Erro", "Não foi possível gerar um ID único para o funcionário.")
@@ -361,10 +360,10 @@ def salvar_funcionario(nome, cpf, rg, nascimento, estado_civil, endereco, cargo,
         try:
             cursor = conn.cursor()
             comando = """
-            INSERT INTO funcionarios (id, nome, cpf, rg, nascimento, estado_civil, endereco, cargo, salario)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO funcionarios (id, nome, cpf, nascimento, estado_civil, endereco, cargo, salario)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """
-            cursor.execute(comando, (id_gerado, nome, cpf, rg, nascimento, estado_civil, endereco, cargo, salario))
+            cursor.execute(comando, (id_gerado, nome, cpf, nascimento, estado_civil, endereco, cargo, salario))
             conn.commit()
             conn.close()
             return id_gerado
@@ -386,7 +385,6 @@ def buscar_funcionario_por_id_func(id_func): # Busca por ID
                     "id": res[0],
                     "nome": res[1],
                     "cpf": res[2],
-                    "rg": res[3],
                     "nascimento": res[4],
                     "estado_civil": res[5],
                     "endereco": res[6],
@@ -397,17 +395,17 @@ def buscar_funcionario_por_id_func(id_func): # Busca por ID
             messagebox.showerror("Erro SQL", f"Erro ao buscar funcionário: {e}")
     return None
 
-def atualizar_funcionario_db(id_func, nome, cpf, rg, nascimento, estado_civil, endereco, cargo, salario): # Atualiza por ID
+def atualizar_funcionario_db(id_func, nome, cpf, nascimento, estado_civil, endereco, cargo, salario): # Atualiza por ID
     conn = conectar()
     if conn:
         try:
             cursor = conn.cursor()
             comando = """
             UPDATE funcionarios SET
-                nome=?, cpf=?, rg=?, nascimento=?, estado_civil=?, endereco=?, cargo=?, salario=?
+                nome=?, cpf=?, nascimento=?, estado_civil=?, endereco=?, cargo=?, salario=?
             WHERE id=?
             """
-            cursor.execute(comando, (nome, cpf, rg, nascimento, estado_civil, endereco, cargo, salario, id_func))
+            cursor.execute(comando, (nome, cpf, nascimento, estado_civil, endereco, cargo, salario, id_func))
             conn.commit()
             conn.close()
             return True

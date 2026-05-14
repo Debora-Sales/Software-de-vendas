@@ -51,6 +51,14 @@ class JanelaProdutos(ctk.CTkToplevel):
         for entry in [self.ent_nome, self.ent_categoria, self.ent_lote, self.ent_validade, self.ent_qnt, self.ent_min, self.ent_custo, self.ent_venda]:
             entry.pack(pady=8)
 
+        # Bindings para Script 24 (Validações e Formatações em Tempo Real)
+        self.ent_lote.bind("<KeyRelease>", lambda e: self.validar_apenas_numeros(self.ent_lote))
+        self.ent_validade.bind("<KeyRelease>", self.formatar_data)
+        self.ent_qnt.bind("<KeyRelease>", self.validar_estoque)
+        self.ent_min.bind("<KeyRelease>", lambda e: self.validar_apenas_numeros(self.ent_min))
+        self.ent_custo.bind("<FocusOut>", lambda e: self.formatar_moeda(self.ent_custo))
+        self.ent_venda.bind("<FocusOut>", lambda e: self.formatar_moeda(self.ent_venda))
+
         self.frame_botoes_cadastro = ctk.CTkFrame(self.tab_cadastro, fg_color="transparent")
         self.frame_botoes_cadastro.pack(pady=15)
 
@@ -89,6 +97,7 @@ class JanelaProdutos(ctk.CTkToplevel):
             height=40
         )
         self.ent_busca_id.pack(side="left", padx=10)
+        self.ent_busca_id.bind("<KeyRelease>", lambda e: self.validar_apenas_numeros(self.ent_busca_id))
 
         self.btn_buscar = ctk.CTkButton(
             self.frame_busca,
@@ -178,6 +187,62 @@ class JanelaProdutos(ctk.CTkToplevel):
             corner_radius=10
         )
 
+    # --- MÉTODOS DE FORMATAÇÃO E VALIDAÇÃO (SCRIPT 24) ---
+
+    def validar_apenas_numeros(self, entry):
+        texto = entry.get()
+        if not texto.isdigit() and texto != "":
+            limpo = "".join(filter(str.isdigit, texto))
+            entry.delete(0, "end")
+            entry.insert(0, limpo)
+
+    def formatar_data(self, event):
+        if event.keysym == "BackSpace": return
+        texto = "".join(filter(str.isdigit, self.ent_validade.get()))
+        novo_texto = ""
+        if len(texto) > 8: texto = texto[:8]
+        
+        for i, char in enumerate(texto):
+            if i == 2 or i == 4:
+                novo_texto += "/"
+            novo_texto += char
+            
+        self.ent_validade.delete(0, "end")
+        self.ent_validade.insert(0, novo_texto)
+
+    def validar_estoque(self, event):
+        self.validar_apenas_numeros(self.ent_qnt)
+        texto = self.ent_qnt.get()
+        if texto:
+            try:
+                val = int(texto)
+                if val > 100:
+                    self.ent_qnt.delete(0, "end")
+                    self.ent_qnt.insert(0, "100")
+                elif val < 0:
+                    self.ent_qnt.delete(0, "end")
+                    self.ent_qnt.insert(0, "0")
+            except ValueError:
+                pass
+
+    def formatar_moeda(self, entry):
+        texto = entry.get().replace("R$", "").replace(" ", "").replace(".", "").replace(",", ".").strip()
+        try:
+            if not texto: return
+            valor = float(texto)
+            formatado = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            entry.delete(0, "end")
+            entry.insert(0, formatado)
+        except ValueError:
+            pass
+
+    def extrair_valor_float(self, campo):
+        texto = campo.get().replace("R$", "").replace(" ", "").replace(".", "").replace(",", ".")
+        try:
+            return float(texto)
+        except:
+            return 0.0
+
     def limpar_campos(self):
         self.ent_nome.delete(0, "end")
         self.ent_categoria.delete(0, "end")
@@ -240,8 +305,8 @@ class JanelaProdutos(ctk.CTkToplevel):
                 "quantidade": int(self.ent_qnt.get()),
                 "categoria": self.ent_categoria.get(),
                 "lote": self.ent_lote.get(),
-                "preco_custo": float(self.ent_custo.get().replace(',', '.')),
-                "preco_venda": float(self.ent_venda.get().replace(',', '.')),
+                "preco_custo": self.extrair_valor_float(self.ent_custo),
+                "preco_venda": self.extrair_valor_float(self.ent_venda),
                 "estoque_minimo": int(self.ent_min.get())
             }
         except ValueError:

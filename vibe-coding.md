@@ -166,3 +166,86 @@ Faça o código ficar coerente e funcional
 ## Script 23 
 
 A erros no código, corrija
+
+## Script 24 
+
+No módulo Produtos nos é necessário a formatação dos campos 
+
+Campo "nome" segue sem alteração no código
+
+Campo "categoria" segue sem alteração no código
+
+Campo "Lote" deverá conter apenas números 
+
+Campo "Data de validade devera ser formatada automaticamente no formato DD/MM/AAAA
+
+Campo "Estoque" deverá conter apenas números, e apenas de 0 à 100
+
+Campo "Preço de custo" deverá ser formatado automaticamente para R$ 0,00
+
+Campo "Preço de venda" deverá ser formatado automaticamente para R$ 0,00
+
+## Script 25
+
+No módulo Clientes nos é necessário a formatação dos campos e adição de novos campos
+
+Na guia "Pessoa física" altere os seguintes campos:
+
+Campo "Nome" segue sem alteração no código
+
+Campo "Endereço" será repartidos em novos campos inclundo "Rua/Avenida", "Bairro", "Cidade", "Complemento" e deverá ser inserido automaticamente no banco de dados como um dado único.
+
+O campo telefone deverá ser formatato automaticamente no formado 
+
+Formatar campo "telefone" automaticamente para (XX) XXXXX-XXXX para celulares e (XX) XXXX-XXXX para telefones fixos
+
+O campo "telefone" deve introduzir apenas números
+
+Formatar campo "CPF" automaticamente para XXX.XXX.XXX-XX
+
+Formatar campo "RG" automaticamente para XX.XXX.XXX-X
+
+os campos "RG" e "CPF" devem receber apenas números
+
+o campo "e-mail" deve obrigatóriamente ter um @ para ser validado
+
+## Script 26
+
+O módulo funcionarios_ui.py deve ser mesclado com a pasta funcionarios.py
+
+---
+
+O modulo clientes_ui.py deve ser mesclado com a pasta clientes.py
+
+---
+
+Faça o código ficar coerente e funcional
+
+---
+
+finalizando, apague a pasta funcionarios_ui.py e clientes_ui.py
+
+
+## Script 27
+
+No módulo Clientes nos é necessário a formatação dos campos e adição de novos campos
+
+Na guia "Pessoa Juridica" altere os seguintes campos:
+
+Campo "Nome" segue sem alteração no código
+
+Campo "Endereço" será repartidos em novos campos inclundo "Rua/Avenida", "Bairro", "Cidade", "Complemento" e deverá ser inserido automaticamente no banco de dados como um dado único.
+
+O campo telefone deverá ser formatato automaticamente no formado 
+
+Formatar campo "telefone" automaticamente para (XX) XXXXX-XXXX para celulares e (XX) XXXX-XXXX para telefones fixos
+
+O campo "telefone" deve introduzir apenas números
+
+Formatar campo "CNPJ" automaticamente para XX.XXX.XXX/XXXX-XX
+
+o campo "e-mail" deve obrigatóriamente ter um @ para ser validado
+
+## Script 28 
+
+Na guia "buscar cliente" deverá ser introduzido apenas numeros
