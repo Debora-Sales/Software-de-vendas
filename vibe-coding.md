@@ -248,4 +248,19 @@ o campo "e-mail" deve obrigatóriamente ter um @ para ser validado
 
 ## Script 28 
 
-Na guia "buscar cliente" deverá ser introduzido apenas numeros
+Na guia "buscar cliente" deverá ser introduzido apenas números
+
+## script 29
+
+-função de abrir janela seguindo a mesma lógica dos outros arquivos
+--
+
+## erro 29 c+
+
+-ele não identifica o vendedor por que? como? e como resolver isso
+-O estoque não diminui, só aplica o limite de compra
+--ele deve diminuir quando o cliente atingir o limite, mesmo que ele adicione o produto depois
+
+## erro 29.1
+
+Não entendi o do vendedor, eu coloco o código de barra deles não identifica

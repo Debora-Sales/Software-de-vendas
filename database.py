@@ -1,6 +1,7 @@
 import sqlite3
 from tkinter import messagebox
 import random
+from datetime import datetime
 
 DB_NAME = "xo_sujeira.db"
 
@@ -69,6 +70,39 @@ def criar_tabelas():
         )
         """)
 
+        # Tabelas de Vendas e Vendedores
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS vendedores (
+            barcode TEXT PRIMARY KEY,
+            nome TEXT NOT NULL
+        )
+        """)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS vendas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_vendedor TEXT,
+            id_cliente INTEGER,
+            data_venda TEXT,
+            valor_total REAL,
+            forma_pagamento TEXT,
+            FOREIGN KEY (id_vendedor) REFERENCES vendedores(barcode),
+            FOREIGN KEY (id_cliente) REFERENCES clientes(id)
+        )
+        """)
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS itens_venda (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_venda INTEGER,
+            id_produto INTEGER,
+            quantidade INTEGER,
+            preco_unitario REAL,
+            FOREIGN KEY (id_venda) REFERENCES vendas(id),
+            FOREIGN KEY (id_produto) REFERENCES produtos(id)
+        )
+        """)
+
         cursor.execute("SELECT * FROM usuarios WHERE nome = ?", ("admin",))
 
         if not cursor.fetchone():
@@ -76,6 +110,18 @@ def criar_tabelas():
                 "INSERT INTO usuarios (nome, senha, tipo) VALUES (?, ?, ?)",
                 ("admin", "admin123", "Administrador")
             )
+
+        # Inserir um vendedor padrão para teste se não houver nenhum
+        cursor.execute("SELECT count(*) FROM vendedores")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("INSERT INTO vendedores (barcode, nome) VALUES (?, ?)", ("12345", "Vendedor Padrão"))
+            cursor.execute("INSERT INTO vendedores (barcode, nome) VALUES (?, ?)", ("54321", "Vendedor Premium"))
+
+        # Migração: Garante que a coluna forma_pagamento existe na tabela vendas
+        try:
+            cursor.execute("ALTER TABLE vendas ADD COLUMN forma_pagamento TEXT")
+        except sqlite3.OperationalError:
+            pass # Se a coluna já existir, o SQLite retorna erro e nós apenas ignoramos.
 
         conn.commit()
         conn.close()
@@ -425,3 +471,129 @@ def deletar_funcionario_db(id_func): # Deleta por ID
         except Exception as e:
             messagebox.showerror("Erro SQL", f"Erro ao excluir funcionário: {e}")
     return False
+
+def buscar_vendedor_por_barcode(barcode):
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT nome FROM vendedores WHERE barcode = ?", (barcode,))
+        res = cursor.fetchone()
+        conn.close()
+        return res[0] if res else None
+    return None
+
+def registrar_venda_db(id_vendedor, id_cliente, valor_total, forma_pagamento, itens):
+    """
+    itens: lista de dicionarios [{'id_prod': 1, 'qnt': 2, 'preco': 10.0}, ...]
+    """
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            data_venda = datetime.now().strftime("%d/%m/%Y %H:%M")
+            
+            # 1. Registrar a Venda
+            cursor.execute("""
+                INSERT INTO vendas (id_vendedor, id_cliente, data_venda, valor_total, forma_pagamento)
+                VALUES (?, ?, ?, ?, ?)
+            """, (id_vendedor, id_cliente, data_venda, valor_total, forma_pagamento))
+            
+            id_venda = cursor.lastrowid
+
+            # 2. Registrar itens e baixar estoque
+            for item in itens:
+                # Verificar validade e estoque novamente por segurança (RN01 e RN05)
+                cursor.execute("SELECT quantidade, validade FROM produtos WHERE id = ?", (item['id_prod'],))
+                prod_data = cursor.fetchone()
+                
+                if prod_data[0] < item['qnt']:
+                    raise Exception(f"Estoque insuficiente para o produto ID {item['id_prod']}")
+                
+                # Registro do item
+                cursor.execute("""
+                    INSERT INTO itens_venda (id_venda, id_produto, quantidade, preco_unitario)
+                    VALUES (?, ?, ?, ?)
+                """, (id_venda, item['id_prod'], item['qnt'], item['preco']))
+
+                # Baixa no estoque
+                cursor.execute("""
+                    UPDATE produtos SET quantidade = quantidade - ? WHERE id = ?
+                """, (item['qnt'], item['id_prod']))
+
+            conn.commit()
+            conn.close()
+            return id_venda
+        except Exception as e:
+            conn.rollback()
+            conn.close()
+            messagebox.showerror("Erro na Venda", str(e))
+            return None
+    return None
+
+def obter_vendas_por_vendedor():
+    """Extrai o total vendido por cada vendedor para cálculo de comissões."""
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT 
+                    IFNULL(vended.nome, 'Vendedor não Cadastrado'), 
+                    SUM(ven.valor_total) 
+                FROM vendas ven
+                LEFT JOIN vendedores vended ON ven.id_vendedor = vended.barcode
+                GROUP BY vended.nome
+            """)
+            res = cursor.fetchall()
+            conn.close()
+            return res
+        except Exception as e:
+            print(f"ERRO COMISSÕES: {e}")
+    return []
+
+def obter_relatorio_lucro_db():
+    """Calcula a margem de lucro por produto baseando-se nas vendas realizadas."""
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT 
+                    p.nome, 
+                    SUM(iv.quantidade), 
+                    SUM(iv.quantidade * iv.preco_unitario), 
+                    SUM(iv.quantidade * IFNULL(p.preco_custo, 0))
+                FROM itens_venda iv
+                JOIN produtos p ON iv.id_produto = p.id
+                GROUP BY p.nome
+            """)
+            res = cursor.fetchall()
+            conn.close()
+            return res
+        except Exception as e:
+            print(f"ERRO LUCRO: {e}")
+    return []
+
+def obter_historico_vendas_db():
+    """Retorna uma lista resumida das últimas vendas."""
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT 
+                    ven.id, 
+                       IFNULL(vended.nome, 'Vendedor não Cadastrado'), 
+                       IFNULL(cli.nome, 'Cliente não Identificado'), 
+                       ven.data_venda, ven.valor_total
+                FROM vendas ven
+                LEFT JOIN vendedores vended ON ven.id_vendedor = vended.barcode
+                LEFT JOIN clientes cli ON ven.id_cliente = cli.id
+                ORDER BY ven.id DESC
+            """)
+            res = cursor.fetchall()
+            conn.close()
+            return res
+        except Exception as e:
+            print(f"ERRO HISTORICO: {e}")
+    return []

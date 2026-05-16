@@ -5,6 +5,8 @@ from PIL import Image
 from clientes import JanelaClientes
 from produtos import JanelaProdutos
 from funcionarios import JanelaFuncionarios
+from vendas import JanelaVendas
+from relatorios import JanelaRelatorios
 
 
 class abrir_menu(ctk.CTkToplevel):
@@ -108,16 +110,10 @@ class abrir_menu(ctk.CTkToplevel):
         JanelaClientes(self)
 
     def abrir_vendas(self):
-        messagebox.showinfo(
-            "Vendas",
-            "Módulo de vendas em desenvolvimento."
-        )
+        JanelaVendas(self)
 
     def abrir_funcionarios(self):
         JanelaFuncionarios(self)
 
     def abrir_relatorios(self):
-        messagebox.showinfo(
-            "Relatórios",
-            "Módulo financeiro em desenvolvimento."
-        )
+        JanelaRelatorios(self)
