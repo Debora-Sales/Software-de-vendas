@@ -85,8 +85,12 @@ def criar_tabelas():
             id_cliente INTEGER,
             data_venda TEXT,
             valor_total REAL,
-            forma_pagamento TEXT,
-            FOREIGN KEY (id_vendedor) REFERENCES vendedores(barcode),
+            valor_frete REAL DEFAULT 0,
+            status_entrega TEXT DEFAULT 'Pendente',
+            tipo_venda TEXT DEFAULT 'Retirada',
+            urgencia TEXT DEFAULT 'Normal',
+            forma_pagamento TEXT, 
+            FOREIGN KEY (id_vendedor) REFERENCES vendedores(barcode), 
             FOREIGN KEY (id_cliente) REFERENCES clientes(id)
         )
         """)
@@ -117,11 +121,18 @@ def criar_tabelas():
             cursor.execute("INSERT INTO vendedores (barcode, nome) VALUES (?, ?)", ("12345", "Vendedor Padrão"))
             cursor.execute("INSERT INTO vendedores (barcode, nome) VALUES (?, ?)", ("54321", "Vendedor Premium"))
 
-        # Migração: Garante que a coluna forma_pagamento existe na tabela vendas
-        try:
-            cursor.execute("ALTER TABLE vendas ADD COLUMN forma_pagamento TEXT")
-        except sqlite3.OperationalError:
-            pass # Se a coluna já existir, o SQLite retorna erro e nós apenas ignoramos.
+        # Migração: Garante que as novas colunas de logística existam em bancos de dados antigos
+        cursor.execute("PRAGMA table_info(vendas)")
+        colunas = [info[1] for info in cursor.fetchall()]
+        
+        if "valor_frete" not in colunas:
+            cursor.execute("ALTER TABLE vendas ADD COLUMN valor_frete REAL DEFAULT 0")
+        if "status_entrega" not in colunas:
+            cursor.execute("ALTER TABLE vendas ADD COLUMN status_entrega TEXT DEFAULT 'Pendente'")
+        if "tipo_venda" not in colunas:
+            cursor.execute("ALTER TABLE vendas ADD COLUMN tipo_venda TEXT DEFAULT 'Retirada'")
+        if "urgencia" not in colunas:
+            cursor.execute("ALTER TABLE vendas ADD COLUMN urgencia TEXT DEFAULT 'Normal'")
 
         conn.commit()
         conn.close()
@@ -431,11 +442,11 @@ def buscar_funcionario_por_id_func(id_func): # Busca por ID
                     "id": res[0],
                     "nome": res[1],
                     "cpf": res[2],
-                    "nascimento": res[4],
-                    "estado_civil": res[5],
-                    "endereco": res[6],
-                    "cargo": res[7],
-                    "salario": res[8]
+                    "nascimento": res[3],
+                    "estado_civil": res[4],
+                    "endereco": res[5],
+                    "cargo": res[6],
+                    "salario": res[7]
                 }
         except Exception as e:
             messagebox.showerror("Erro SQL", f"Erro ao buscar funcionário: {e}")
@@ -482,7 +493,7 @@ def buscar_vendedor_por_barcode(barcode):
         return res[0] if res else None
     return None
 
-def registrar_venda_db(id_vendedor, id_cliente, valor_total, forma_pagamento, itens):
+def registrar_venda_db(id_vendedor, id_cliente, valor_total, valor_frete, forma_pagamento, tipo_venda, urgencia, itens):
     """
     itens: lista de dicionarios [{'id_prod': 1, 'qnt': 2, 'preco': 10.0}, ...]
     """
@@ -494,9 +505,9 @@ def registrar_venda_db(id_vendedor, id_cliente, valor_total, forma_pagamento, it
             
             # 1. Registrar a Venda
             cursor.execute("""
-                INSERT INTO vendas (id_vendedor, id_cliente, data_venda, valor_total, forma_pagamento)
-                VALUES (?, ?, ?, ?, ?)
-            """, (id_vendedor, id_cliente, data_venda, valor_total, forma_pagamento))
+                INSERT INTO vendas (id_vendedor, id_cliente, data_venda, valor_total, valor_frete, forma_pagamento, status_entrega, tipo_venda, urgencia) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (id_vendedor, id_cliente, data_venda, valor_total, valor_frete, forma_pagamento, 'Pendente', tipo_venda, urgencia))
             
             id_venda = cursor.lastrowid
 
@@ -583,10 +594,15 @@ def obter_historico_vendas_db():
             cursor.execute("""
                 SELECT 
                     ven.id, 
-                       IFNULL(vended.nome, 'Vendedor não Cadastrado'), 
-                       IFNULL(cli.nome, 'Cliente não Identificado'), 
-                       ven.data_venda, ven.valor_total
-                FROM vendas ven
+                    IFNULL(vended.nome, 'Vendedor não Cadastrado'), 
+                    IFNULL(cli.nome, 'Cliente não Identificado'), 
+                    ven.data_venda, 
+                    ven.valor_total,
+                    IFNULL(ven.forma_pagamento, 'N/A'),
+                    ven.tipo_venda,
+                    ven.urgencia,
+                    ven.status_entrega
+                FROM vendas ven 
                 LEFT JOIN vendedores vended ON ven.id_vendedor = vended.barcode
                 LEFT JOIN clientes cli ON ven.id_cliente = cli.id
                 ORDER BY ven.id DESC
@@ -597,3 +613,47 @@ def obter_historico_vendas_db():
         except Exception as e:
             print(f"ERRO HISTORICO: {e}")
     return []
+
+def obter_entregas_pendentes_db():
+    """Retorna vendas do tipo Entrega que não foram finalizadas, ordenadas por urgência."""
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT 
+                    ven.id, 
+                    cli.nome, 
+                    cli.endereco, 
+                    ven.urgencia, 
+                    ven.status_entrega
+                FROM vendas ven
+                JOIN clientes cli ON ven.id_cliente = cli.id
+                WHERE ven.tipo_venda = 'Entrega' AND ven.status_entrega != 'Entregue'
+                ORDER BY 
+                    CASE ven.urgencia 
+                        WHEN 'Crítico' THEN 1 
+                        WHEN 'Urgente' THEN 2 
+                        ELSE 3 
+                    END, ven.id ASC
+            """)
+            res = cursor.fetchall()
+            conn.close()
+            return res
+        except Exception as e:
+            print(f"ERRO LOGISTICA: {e}")
+    return []
+
+def atualizar_status_entrega_db(id_venda, novo_status):
+    """Atualiza o status de entrega de uma venda específica."""
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE vendas SET status_entrega = ? WHERE id = ?", (novo_status, id_venda))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            messagebox.showerror("Erro SQL", f"Erro ao atualizar status: {e}")
+    return False

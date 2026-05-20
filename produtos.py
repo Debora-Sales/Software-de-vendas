@@ -12,46 +12,76 @@ class JanelaProdutos(ctk.CTkToplevel):
         super().__init__(parent)
 
         self.title("Cadastro de Produtos - Xô Sujeira")
-        self.geometry("700x750")
+        self.geometry("750x850")
         self.resizable(False, False)
 
         self.grab_set()
         self.focus()
 
+        # Estado
         self.id_produto_editando = None
         self.produto_atual = None
 
-        self.label_titulo = ctk.CTkLabel(
-            self,
-            text="Novo Cadastro de Produto",
-            font=("Roboto", 28, "bold")
-        )
-        self.label_titulo.pack(pady=20)
+        # Título principal
+        ctk.CTkLabel(self, text="Gerenciamento de Produtos", font=("Roboto", 28, "bold")).pack(pady=15)
 
-        # Criação das Abas (Tabs)
-        self.tabview = ctk.CTkTabview(self, width=650, height=600)
-        self.tabview.pack(padx=20, pady=10, fill="both", expand=True)
+        # Status/Feedback (Inspirado no vendas.py)
+        self.lbl_status = ctk.CTkLabel(self, text="", font=("Roboto", 14, "bold"))
+        self.lbl_status.pack(pady=5)
+
+        # --- FRAME DE BUSCA (TOPO) ---
+        self.frame_busca = ctk.CTkFrame(self)
+        self.frame_busca.pack(padx=20, pady=10, fill="x")
         
-        self.tab_cadastro = self.tabview.add("Cadastrar Produto")
-        self.tab_busca = self.tabview.add("Buscar Produto")
-
-        # --- UI DA ABA CADASTRO ---
+        ctk.CTkLabel(self.frame_busca, text="Localizar Produto (ID):", font=("Roboto", 12, "bold")).pack(side="left", padx=10)
         
-        # Campos de entrada para cadastro
-        self.ent_nome = self.criar_entry(self.tab_cadastro, "Nome do Produto (ex: Detergente Neutro 500ml)")
-        self.ent_categoria = self.criar_entry(self.tab_cadastro, "Categoria (ex: Limpeza, Higiene)")
-        self.ent_lote = self.criar_entry(self.tab_cadastro, "Lote")
-        self.ent_validade = self.criar_entry(self.tab_cadastro, "Data de Validade (DD/MM/YYYY)")
-        self.ent_qnt = self.criar_entry(self.tab_cadastro, "Quantidade em Estoque")
-        self.ent_min = self.criar_entry(self.tab_cadastro, "Estoque Mínimo (Alerta)")
-        self.ent_custo = self.criar_entry(self.tab_cadastro, "Preço de Custo (Ex: 1.50)")
-        self.ent_venda = self.criar_entry(self.tab_cadastro, "Preço de Venda (Ex: 3.50)")
+        self.ent_busca_id = ctk.CTkEntry(self.frame_busca, placeholder_text="ID...", width=150)
+        self.ent_busca_id.pack(side="left", padx=5)
+        self.ent_busca_id.bind("<KeyRelease>", lambda e: self.validar_apenas_numeros(self.ent_busca_id))
 
-        # Posicionamento
-        for entry in [self.ent_nome, self.ent_categoria, self.ent_lote, self.ent_validade, self.ent_qnt, self.ent_min, self.ent_custo, self.ent_venda]:
-            entry.pack(pady=8)
+        self.btn_buscar = ctk.CTkButton(self.frame_busca, text="🔍 Buscar / Editar", width=140, command=self.buscar_produto)
+        self.btn_buscar.pack(side="left", padx=10)
 
-        # Bindings para Script 24 (Validações e Formatações em Tempo Real)
+        self.btn_cancelar = ctk.CTkButton(self.frame_busca, text="❌ Cancelar", width=100, fg_color="#444444", hover_color="#333333", command=self.limpar_campos)
+        # O botão inicia sem pack() para ficar oculto até uma busca ser realizada
+
+        # --- FRAME DO FORMULÁRIO ---
+        self.frame_form = ctk.CTkFrame(self)
+        self.frame_form.pack(padx=20, pady=10, fill="both", expand=True)
+
+        # Campos com Labels
+        ctk.CTkLabel(self.frame_form, text="Nome do Produto:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
+        self.ent_nome = self.criar_entry(self.frame_form, "Ex: Detergente Neutro 500ml")
+        self.ent_nome.pack(pady=(0, 10))
+
+        ctk.CTkLabel(self.frame_form, text="Categoria:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
+        self.ent_categoria = self.criar_entry(self.frame_form, "Ex: Limpeza, Higiene")
+        self.ent_categoria.pack(pady=(0, 10))
+
+        ctk.CTkLabel(self.frame_form, text="Lote:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
+        self.ent_lote = self.criar_entry(self.frame_form, "Apenas números")
+        self.ent_lote.pack(pady=(0, 10))
+
+        ctk.CTkLabel(self.frame_form, text="Data de Validade:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
+        self.ent_validade = self.criar_entry(self.frame_form, "DD/MM/AAAA")
+        self.ent_validade.pack(pady=(0, 10))
+
+        ctk.CTkLabel(self.frame_form, text="Quantidade em Estoque:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
+        self.ent_qnt = self.criar_entry(self.frame_form, "0 a 100")
+        self.ent_qnt.pack(pady=(0, 10))
+
+        ctk.CTkLabel(self.frame_form, text="Estoque Mínimo (Alerta):", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
+        self.ent_min = self.criar_entry(self.frame_form, "Quantidade para aviso")
+        self.ent_min.pack(pady=(0, 10))
+
+        ctk.CTkLabel(self.frame_form, text="Preço de Custo:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
+        self.ent_custo = self.criar_entry(self.frame_form, "R$ 0,00")
+        self.ent_custo.pack(pady=(0, 10))
+
+        ctk.CTkLabel(self.frame_form, text="Preço de Venda:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
+        self.ent_venda = self.criar_entry(self.frame_form, "R$ 0,00")
+        self.ent_venda.pack(pady=(0, 10))
+
         self.ent_lote.bind("<KeyRelease>", lambda e: self.validar_apenas_numeros(self.ent_lote))
         self.ent_validade.bind("<KeyRelease>", self.formatar_data)
         self.ent_qnt.bind("<KeyRelease>", self.validar_estoque)
@@ -59,124 +89,58 @@ class JanelaProdutos(ctk.CTkToplevel):
         self.ent_custo.bind("<FocusOut>", lambda e: self.formatar_moeda(self.ent_custo))
         self.ent_venda.bind("<FocusOut>", lambda e: self.formatar_moeda(self.ent_venda))
 
-        self.frame_botoes_cadastro = ctk.CTkFrame(self.tab_cadastro, fg_color="transparent")
-        self.frame_botoes_cadastro.pack(pady=15)
+        # --- FRAME DE AÇÕES (BOTÕES) ---
+        self.frame_acoes = ctk.CTkFrame(self, fg_color="transparent")
+        self.frame_acoes.pack(pady=15)
 
-        self.btn_salvar = ctk.CTkButton(
-            self.frame_botoes_cadastro,
-            text="Salvar Produto",
-            height=45,
-            font=("Roboto", 16, "bold"),
-            fg_color="green",
-            hover_color="darkgreen",
-            command=self.validar_e_salvar
-        )
+        self.btn_salvar = ctk.CTkButton(self.frame_acoes, text="💾 Salvar / Atualizar", height=45, font=("Roboto", 15, "bold"), fg_color="green", command=self.validar_e_salvar)
         self.btn_salvar.pack(side="left", padx=10)
 
-        # Sprint 9: Botão Limpar Campos
-        self.btn_limpar = ctk.CTkButton(
-            self.frame_botoes_cadastro,
-            text="Limpar Campos",
-            height=45,
-            font=("Roboto", 16, "bold"),
-            fg_color="gray",
-            hover_color="dimgray",
-            command=self.limpar_campos
-        )
+        self.btn_limpar = ctk.CTkButton(self.frame_acoes, text="🧹 Limpar", height=45, font=("Roboto", 15, "bold"), fg_color="gray", command=self.limpar_campos)
         self.btn_limpar.pack(side="left", padx=10)
 
-        # --- UI DA ABA BUSCA ---
-        
-        self.frame_busca = ctk.CTkFrame(self.tab_busca, fg_color="transparent")
-        self.frame_busca.pack(pady=20, padx=20, fill="x")
+        self.btn_excluir = ctk.CTkButton(self.frame_acoes, text="🗑️ Excluir", height=45, font=("Roboto", 15, "bold"), fg_color="red", state="disabled", command=self.confirmar_exclusao)
+        self.btn_excluir.pack(side="left", padx=10)
 
-        self.ent_busca_id = ctk.CTkEntry(
-            self.frame_busca, 
-            placeholder_text="Digite o ID do produto...",
-            width=300,
-            height=40
-        )
-        self.ent_busca_id.pack(side="left", padx=10)
-        self.ent_busca_id.bind("<KeyRelease>", lambda e: self.validar_apenas_numeros(self.ent_busca_id))
-
-        self.btn_buscar = ctk.CTkButton(
-            self.frame_busca,
-            text="Buscar",
-            width=100,
-            height=40,
-            command=self.buscar_produto
-        )
-        self.btn_buscar.pack(side="left")
-
-        self.txt_resultado = ctk.CTkTextbox(
-            self.tab_busca,
-            width=550,
-            height=300,
-            font=("Roboto", 14)
-        )
-        self.txt_resultado.pack(pady=20, padx=20)
-        self.txt_resultado.insert("0.0", "Os detalhes do produto aparecerão aqui...")
+        # Área de log/detalhes (Opcional, mas útil para o Alerta de Estoque Mínimo)
+        self.txt_resultado = ctk.CTkTextbox(self, width=650, height=100, font=("Roboto", 12))
+        self.txt_resultado.pack(pady=10, padx=20)
+        self.txt_resultado.insert("0.0", "Informações adicionais e alertas de estoque aparecerão aqui...")
         self.txt_resultado.configure(state="disabled")
 
-        # Sprints 7 e 8: Botões de Ação na Busca
-        self.frame_acoes_busca = ctk.CTkFrame(self.tab_busca, fg_color="transparent")
-        self.frame_acoes_busca.pack(pady=10)
-
-        self.btn_editar = ctk.CTkButton(
-            self.frame_acoes_busca,
-            text="Editar Produto",
-            state="disabled",
-            command=self.preparar_edicao
-        )
-        self.btn_editar.pack(side="left", padx=10)
-
-        self.btn_excluir = ctk.CTkButton(
-            self.frame_acoes_busca,
-            text="Excluir Produto",
-            state="disabled",
-            fg_color="red",
-            hover_color="darkred",
-            command=self.confirmar_exclusao
-        )
-        self.btn_excluir.pack(side="left", padx=10)
+    def mostrar_feedback(self, mensagem, cor="red"):
+        self.lbl_status.configure(text=mensagem, text_color=cor)
+        self.after(3500, lambda: self.lbl_status.configure(text=""))
 
     def buscar_produto(self):
         id_digitado = self.ent_busca_id.get()
         if not id_digitado:
-            messagebox.showwarning("Atenção", "Informe um ID para buscar.")
+            self.mostrar_feedback("⚠️ Informe um ID.")
             return
 
         produto = buscar_produto_por_id(id_digitado)
         self.produto_atual = produto
-        
-        self.txt_resultado.configure(state="normal")
-        self.txt_resultado.delete("1.0", "end")
-        
-        if produto:
-            self.btn_editar.configure(state="normal")
-            self.btn_excluir.configure(state="normal")
 
+        if produto:
+            self.preparar_edicao() # Preenche o formulário automaticamente
+            self.btn_excluir.configure(state="normal")
+            self.btn_cancelar.pack(side="left", padx=5) # Mostra o botão ao carregar um produto
+            
+            # Alerta de estoque na caixa de texto
+            self.txt_resultado.configure(state="normal")
+            self.txt_resultado.delete("1.0", "end")
             info = f"PRODUTO ENCONTRADO:\n\n"
             info += f"ID: {produto['id']}\n"
-            info += f"Nome: {produto['nome']}\n"
-            info += f"Categoria: {produto['categoria']}\n"
-            info += f"Lote: {produto['lote']}\n"
-            info += f"Validade: {produto['validade']}\n"
-            info += f"Quantidade: {produto['quantidade']}\n"
-            info += f"Preço Venda: R$ {produto['preco_venda']:.2f}\n"
-            info += f"Estoque Mínimo: {produto['estoque_minimo']}"
-
-            # Sprint 10: Alerta de Estoque Mínimo
             if produto['quantidade'] <= produto['estoque_minimo']:
                 info += f"\n\n⚠️ ALERTA: ESTOQUE CRÍTICO!\nA quantidade atual ({produto['quantidade']}) atingiu o limite mínimo ({produto['estoque_minimo']})."
-
             self.txt_resultado.insert("0.0", info)
+            self.txt_resultado.configure(state="disabled")
+            
+            self.mostrar_feedback("✅ Produto carregado para edição!", "green")
         else:
-            self.btn_editar.configure(state="disabled")
             self.btn_excluir.configure(state="disabled")
-            self.txt_resultado.insert("0.0", "Produto não encontrado no sistema.")
-        
-        self.txt_resultado.configure(state="disabled")
+            self.mostrar_feedback("❌ Produto não encontrado.")
+            self.limpar_campos()
 
     def criar_entry(self, master, texto):
         return ctk.CTkEntry(
@@ -253,8 +217,17 @@ class JanelaProdutos(ctk.CTkToplevel):
         self.ent_custo.delete(0, "end")
         self.ent_venda.delete(0, "end")
         
+        self.ent_busca_id.delete(0, "end") # Limpa o campo de busca ao cancelar/limpar
+        self.btn_cancelar.pack_forget()    # Esconde o botão cancelar ao voltar para o modo cadastro
+        
+        self.txt_resultado.configure(state="normal")
+        self.txt_resultado.delete("1.0", "end")
+        self.txt_resultado.insert("0.0", "Informações adicionais aparecerão aqui...")
+        self.txt_resultado.configure(state="disabled")
+
         self.id_produto_editando = None
-        self.btn_salvar.configure(text="Salvar Produto", fg_color="green")
+        self.btn_salvar.configure(text="💾 Salvar / Atualizar", fg_color="green")
+        self.btn_excluir.configure(state="disabled")
 
     def preparar_edicao(self):
         if not self.produto_atual:
@@ -273,8 +246,7 @@ class JanelaProdutos(ctk.CTkToplevel):
         self.ent_custo.insert(0, str(self.produto_atual['preco_custo']))
         self.ent_venda.insert(0, str(self.produto_atual['preco_venda']))
 
-        self.btn_salvar.configure(text="Atualizar Produto", fg_color="blue")
-        self.tabview.set("Cadastrar Produto")
+        self.btn_salvar.configure(text="🔄 Atualizar Produto", fg_color="blue")
 
     def confirmar_exclusao(self):
         if not self.produto_atual:
@@ -287,15 +259,9 @@ class JanelaProdutos(ctk.CTkToplevel):
 
         if confirmar:
             if deletar_produto_db(self.produto_atual['id']):
-                messagebox.showinfo("Sucesso", "Produto excluído com sucesso.")
+                self.mostrar_feedback("🗑️ Produto excluído!", "orange")
                 self.ent_busca_id.delete(0, "end")
-                self.txt_resultado.configure(state="normal")
-                self.txt_resultado.delete("1.0", "end")
-                self.txt_resultado.insert("0.0", "Os detalhes do produto aparecerão aqui...")
-                self.txt_resultado.configure(state="disabled")
-                self.btn_editar.configure(state="disabled")
-                self.btn_excluir.configure(state="disabled")
-                self.produto_atual = None
+                self.limpar_campos()
 
     def validar_e_salvar(self):
         try:
@@ -325,9 +291,8 @@ class JanelaProdutos(ctk.CTkToplevel):
                 dados["preco_venda"], dados["estoque_minimo"]
             )
             if sucesso:
-                messagebox.showinfo("Sucesso", f"Produto '{dados['nome']}' atualizado!")
+                self.mostrar_feedback(f"✅ Produto '{dados['nome']}' atualizado!", "green")
                 self.limpar_campos()
-                self.tabview.set("Buscar Produto")
         else:
             # Salvando no banco
             id_produto = salvar_produto(
@@ -337,8 +302,5 @@ class JanelaProdutos(ctk.CTkToplevel):
             )
 
             if id_produto:
-                messagebox.showinfo(
-                    "Sucesso",
-                    f"Produto '{dados['nome']}' cadastrado!\nID: {id_produto}"
-                )
+                self.mostrar_feedback(f"✅ Produto cadastrado com ID: {id_produto}", "green")
                 self.limpar_campos()

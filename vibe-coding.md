@@ -264,3 +264,39 @@ Na guia "buscar cliente" deverá ser introduzido apenas números
 ## erro 29.1
 
 Não entendi o do vendedor, eu coloco o código de barra deles não identifica
+
+# script 30 
+
+reset do banco de dados para registrar vendas no relatório
+
+# script 31 PRODUTOS V 0.02
+
+CRUD realizado X
+botão ação_cancelar busca X
+-objetivo fazer o crud em uma única janela em todas as janelas X
+-sistema de entrega
+-forma de pagamento
+
+
+# script 32
+
+-cancelamento de venda, aguardar, mensagem
+-nivel de urgencia X
+-alerta de prazo ?
+pré estoque atual---preciso ver uma janela de produtos e também alerta
+demandas, metas
+
+gestão de entregas
+Controle de Status (O Ciclo de Vida): No banco de dados, criamos o campo status_entrega como "Pendente". Porém, ainda não temos uma tela para o pessoal do estoque/logística mudar esse status para "Em Rota" ou "Entregue". 
+
+Impressão de Romaneio/Etiqueta: Para uma entrega B2B, é comum precisar imprimir um papel com o endereço do cliente e a lista de produtos para o motorista levar.
+
+Variação de Frete por Urgência: Atualmente, "Normal" e "Crítico" custam os mesmos R$ 10,00. Em sistemas mais complexos, uma entrega "Crítica" costuma ter uma taxa de urgência maior.
+
+
+# script 33
+
+-tabela de frete, aumento de preço do combustivel
+-gráficos na tabela do adm
+preço dos produtos
+-layout

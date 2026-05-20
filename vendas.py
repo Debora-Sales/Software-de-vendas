@@ -90,16 +90,39 @@ class JanelaVendas(ctk.CTkToplevel):
         self.cart_scroll.pack(padx=20, pady=5, fill="both", expand=True)
 
         # Frame Inferior: Total e Pagamento
-        self.frame_fim = ctk.CTkFrame(self, height=100)
+        self.frame_fim = ctk.CTkFrame(self)
         self.frame_fim.pack(padx=20, pady=20, fill="x")
 
-        self.lbl_total = ctk.CTkLabel(self.frame_fim, text="TOTAL: R$ 0,00", font=("Roboto", 24, "bold"), text_color="orange")
+        # Linha 1: Configurações de Logística
+        self.f_logistica = ctk.CTkFrame(self.frame_fim, fg_color="transparent")
+        self.f_logistica.pack(fill="x", pady=5, padx=10)
+
+        ctk.CTkLabel(self.f_logistica, text="Logística:", font=("Roboto", 11, "bold")).pack(side="left", padx=5)
+        self.seg_logistica = ctk.CTkSegmentedButton(self.f_logistica, values=["Retirada", "Entrega"], width=150, command=self.ajustar_frete_automatico)
+        self.seg_logistica.set("Retirada")
+        self.seg_logistica.pack(side="left", padx=5)
+
+        ctk.CTkLabel(self.f_logistica, text="Urgência:", font=("Roboto", 11, "bold")).pack(side="left", padx=(20, 5))
+        self.seg_urgencia = ctk.CTkSegmentedButton(self.f_logistica, values=["Normal", "Urgente", "Crítico"], width=200, selected_color="orange", command=self.ajustar_frete_automatico)
+        self.seg_urgencia.set("Normal")
+        self.seg_urgencia.pack(side="left", padx=5)
+
+        ctk.CTkLabel(self.f_logistica, text="Frete R$:", font=("Roboto", 11, "bold")).pack(side="left", padx=(20, 5))
+        self.ent_frete = ctk.CTkEntry(self.f_logistica, width=80, state="readonly")
+        self.ent_frete.insert(0, "0.00")
+        self.ent_frete.pack(side="left", padx=5)
+
+        # Linha 2: Financeiro e Ação
+        self.f_checkout = ctk.CTkFrame(self.frame_fim, fg_color="transparent")
+        self.f_checkout.pack(fill="x", pady=10, padx=10)
+
+        self.lbl_total = ctk.CTkLabel(self.f_checkout, text="TOTAL: R$ 0,00", font=("Roboto", 26, "bold"), text_color="orange")
         self.lbl_total.pack(side="left", padx=20)
 
-        self.check_avista = ctk.CTkCheckBox(self.frame_fim, text="Pagamento à Vista (10% Desc.)", command=self.atualizar_total_display)
+        self.check_avista = ctk.CTkCheckBox(self.f_checkout, text="Pagamento à Vista (10% Desc.)", command=self.atualizar_total_display)
         self.check_avista.pack(side="left", padx=20)
 
-        self.btn_finalizar = ctk.CTkButton(self.frame_fim, text="FINALIZAR VENDA", height=50, fg_color="blue", font=("Roboto", 18, "bold"), command=self.finalizar_venda)
+        self.btn_finalizar = ctk.CTkButton(self.f_checkout, text="FINALIZAR VENDA", height=55, width=220, fg_color="blue", font=("Roboto", 18, "bold"), command=self.finalizar_venda)
         self.btn_finalizar.pack(side="right", padx=20)
 
     def validar_numeros(self, entry):
@@ -139,6 +162,27 @@ class JanelaVendas(ctk.CTkToplevel):
         else:
             self.lbl_vendedor_nome.configure(text="Vendedor: Não encontrado", text_color="red")
             self.vendedor_atual = None
+
+    def ajustar_frete_automatico(self, _=None):
+        """Define o valor do frete com base na logística e urgência selecionadas"""
+        tipo_logistica = self.seg_logistica.get()
+        nivel_urgencia = self.seg_urgencia.get()
+        
+        valor_frete = 0.0
+        
+        if tipo_logistica == "Entrega":
+            if nivel_urgencia == "Normal":
+                valor_frete = 10.00
+            elif nivel_urgencia == "Urgente":
+                valor_frete = 15.00
+            elif nivel_urgencia == "Crítico":
+                valor_frete = 25.00
+        
+        self.ent_frete.configure(state="normal")
+        self.ent_frete.delete(0, "end")
+        self.ent_frete.insert(0, f"{valor_frete:.2f}")
+        self.ent_frete.configure(state="readonly")
+        self.atualizar_total_display()
 
     def adicionar_item(self):
         id_p = self.ent_id_prod.get()
@@ -207,8 +251,15 @@ class JanelaVendas(ctk.CTkToplevel):
 
     def calcular_total(self):
         total = sum(item['subtotal'] for item in self.carrinho)
+        
         if self.check_avista.get(): # RN03: Desconto 10%
             total *= 0.90
+            
+        try:
+            frete = float(self.ent_frete.get().replace(",", ".")) if self.ent_frete.get() else 0.0
+            total += frete
+        except ValueError: pass
+            
         return total
 
     def atualizar_total_display(self):
@@ -227,15 +278,21 @@ class JanelaVendas(ctk.CTkToplevel):
             return
 
         total = self.calcular_total()
+        frete = float(self.ent_frete.get().replace(",", ".")) if self.ent_frete.get() else 0.0
         forma = "À Vista" if self.check_avista.get() else "Prazo/Outros"
+        tipo_venda = self.seg_logistica.get()
+        urgencia = self.seg_urgencia.get()
 
         confirmar = messagebox.askyesno("Confirmar", f"Finalizar venda no valor de R$ {total:.2f}?")
         if confirmar:
             id_venda = registrar_venda_db(
                 self.vendedor_atual, 
-                self.cliente_selecionado['id'], 
-                total, 
-                forma, 
+                self.cliente_selecionado['id'],
+                total,         # valor_total (já inclui o frete)
+                frete,         # valor_frete
+                forma,         # forma_pagamento
+                tipo_venda,
+                urgencia,
                 self.carrinho
             )
             if id_venda:
