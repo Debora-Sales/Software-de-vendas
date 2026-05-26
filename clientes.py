@@ -8,7 +8,7 @@ from database import (
 )
 
 class JanelaClientes(ctk.CTkToplevel):
-    def __init__(self, parent):
+    def __init__(self, parent, perfil_usuario):
         super().__init__(parent)
 
         self.title("Cadastro de Clientes - Xô Sujeira")
@@ -19,6 +19,7 @@ class JanelaClientes(ctk.CTkToplevel):
         self.focus()
 
         # Estado
+        self.perfil = perfil_usuario
         self.id_cliente_editando = None
         self.cliente_atual = None
 
@@ -235,7 +236,7 @@ class JanelaClientes(ctk.CTkToplevel):
         self.txt_resultado.configure(state="disabled")
 
         self.id_cliente_editando = None
-        self.btn_salvar.configure(text="💾 Salvar / Atualizar", fg_color="green")
+        self.btn_salvar.configure(text="💾 Salvar / Atualizar", fg_color="green", state="normal")
         self.btn_excluir.configure(state="disabled")
 
     def buscar_cliente(self):
@@ -248,8 +249,7 @@ class JanelaClientes(ctk.CTkToplevel):
         self.cliente_atual = cliente
 
         if cliente:
-            self.preparar_edicao() 
-            self.btn_excluir.configure(state="normal")
+            self.preparar_edicao()
             self.btn_cancelar.pack(side="left", padx=5) 
             
             self.txt_resultado.configure(state="normal")

@@ -275,7 +275,7 @@ CRUD realizado X
 botão ação_cancelar busca X
 -objetivo fazer o crud em uma única janela em todas as janelas X
 -sistema de entrega
--forma de pagamento
+-forma de pagamento negativo
 
 
 # script 32
@@ -300,3 +300,52 @@ Variação de Frete por Urgência: Atualmente, "Normal" e "Crítico" custam os m
 -gráficos na tabela do adm
 preço dos produtos
 -layout
+
+
+
+Segunda-feira 25 de maio de 2026
+
+# script 
+
+Deverá ser adicionado 3 tipos de usuários
+
+- Administrador (manteremos o login e a senha atual - Login: Admin - Senha: Admin123)
+- Vendedor (Login: Vendedor - Senha: Vendedor123)
+- Estoquista (Login: Estoquista - Senha: Estoquista123)
+
+- O login de vendedores deverá Aparecer somente o módulo de "vendas" e "clientes" 
+- O login de estoquistas deverá aparecer somente o módulo de "Produtos"
+- O login do Administrador não deverá ser alterado
+
+# script 
+
+- Os vendedores poderão adicionar clientes, mas só o administrador poderá excluir e alterar os dados dos clientes
+- Os estoquistas poderão adicionar produtos, editar produtos e apagar produtos
+
+# script
+
+O software irá trabalhar com o relogio de tempo em tempo real, será atualizado através do relógio da maquina que ele está trabalhando
+Com ele, iremos estippular algumas regras 
+
+- No módulo de vendas, deverá ser introduzido uma regra onde o usuário não poderá cadastrar um produto com a data de validade anterior ao dia atual (data de validade vencida)
+- Na janela de vendas, será estipulado em quantos dias o frete chegará ao nosso cliente (contando em dias uteis)
+
+# script
+
+Queremos criar um looby na primeira janela que abrimos logo após logarmos no software. 
+Quando logarmos como Administrador, ele devera nos mostrar informações relevantes para administrar as vendas
+-Deverá aparecer os produtos mais vendidos organizados em posições 1°, 2°, 3° e assim por diante com relação a quantidade vendida
+-Deverá aparecer os produtos que estão em baixo estoque organizados por qual está com o estoque mais baixo
+-Deverá aparecer os vendedores organizados em posições 1°, 2°, 3° e assim por diante com relação a quem está vendendo mais, mostrando o valor que cada funcionário fez no mês
+
+# script
+
+- No login de administrador, deverá ser introduzido um módulo novo de configurações do software onde ele poderá alterar alguns detalhes financeiros de regras de negócio
+
+- O Administrador vai conseguir alterar o preço base dos fretes 
+- O administrador poderá alterar o nome dos de usurários de todos os usuários
+- O Administrador poderá alterar a senha dos logins de totos os usuários
+
+# script 39
+
+Abaixo do indicador de vendedores do mês, adicione modulos iguais porém representando "Dia" e "Semestre". A ordem deverá ser "Dia" abaixo "Mês" e logo abaixo "Semestre".

@@ -5,7 +5,9 @@ from database import (
     obter_relatorio_lucro_db,
     obter_historico_vendas_db,
     obter_entregas_pendentes_db,
-    atualizar_status_entrega_db
+    atualizar_status_entrega_db,
+    obter_tabela_fretes_db,
+    salvar_configuracao_frete_db
 )
 
 class JanelaRelatorios(ctk.CTkToplevel):
@@ -18,6 +20,8 @@ class JanelaRelatorios(ctk.CTkToplevel):
         self.resizable(False, False)
         self.grab_set()  # Impede interação com a janela de trás
         self.focus()
+
+        self.entradas_frete = {} # Armazena widgets para salvar configurações
 
         # Cabeçalho Principal
         ctk.CTkLabel(self, text="📊 Gestão Financeira e Resultados", font=("Roboto", 28, "bold")).pack(pady=20)
@@ -186,4 +190,3 @@ class JanelaRelatorios(ctk.CTkToplevel):
 
         if not dados_logistica:
             ctk.CTkLabel(self.scroll_logistica, text="Nenhuma entrega pendente encontrada.", text_color="gray").pack(pady=40)
-        

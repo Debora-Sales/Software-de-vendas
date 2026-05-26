@@ -1,11 +1,12 @@
 import customtkinter as ctk
 from tkinter import messagebox
-from datetime import datetime
+from datetime import datetime, timedelta
 from database import (
     buscar_cliente_por_id, 
     buscar_produto_por_id, 
     buscar_vendedor_por_barcode,
-    registrar_venda_db
+    registrar_venda_db,
+    buscar_valor_frete_db
 )
 
 class JanelaVendas(ctk.CTkToplevel):
@@ -21,6 +22,11 @@ class JanelaVendas(ctk.CTkToplevel):
         self.carrinho = []
         self.cliente_selecionado = None
         self.vendedor_atual = None
+
+        # Script 36: Relógio em tempo real
+        self.lbl_clock = ctk.CTkLabel(self, text="", font=("Roboto", 12, "bold"), text_color="gray")
+        self.lbl_clock.place(x=20, y=20)
+        self.atualizar_relogio()
 
         # --- UI LAYOUT ---
         ctk.CTkLabel(self, text="Ponto de Venda (Checkout)", font=("Roboto", 28, "bold")).pack(pady=15)
@@ -106,11 +112,19 @@ class JanelaVendas(ctk.CTkToplevel):
         self.seg_urgencia = ctk.CTkSegmentedButton(self.f_logistica, values=["Normal", "Urgente", "Crítico"], width=200, selected_color="orange", command=self.ajustar_frete_automatico)
         self.seg_urgencia.set("Normal")
         self.seg_urgencia.pack(side="left", padx=5)
+        ctk.CTkLabel(self.f_logistica, text="Distância:", font=("Roboto", 11, "bold")).pack(side="left", padx=(20, 5))
+        self.seg_distancia = ctk.CTkSegmentedButton(self.f_logistica, values=["20Km", "50Km", "100Km", "250Km", "500Km", ">500Km"], width=380, selected_color="orange", command=self.ajustar_frete_automatico)
+        self.seg_distancia.set("20Km")
+        self.seg_distancia.pack(side="left", padx=5)
 
         ctk.CTkLabel(self.f_logistica, text="Frete R$:", font=("Roboto", 11, "bold")).pack(side="left", padx=(20, 5))
         self.ent_frete = ctk.CTkEntry(self.f_logistica, width=80, state="readonly")
         self.ent_frete.insert(0, "0.00")
         self.ent_frete.pack(side="left", padx=5)
+
+        ctk.CTkLabel(self.f_logistica, text="Entrega Estimada:", font=("Roboto", 11, "bold")).pack(side="left", padx=(20, 5))
+        self.lbl_prazo = ctk.CTkLabel(self.f_logistica, text="---", font=("Roboto", 11), text_color="cyan")
+        self.lbl_prazo.pack(side="left", padx=5)
 
         # Linha 2: Financeiro e Ação
         self.f_checkout = ctk.CTkFrame(self.frame_fim, fg_color="transparent")
@@ -124,6 +138,12 @@ class JanelaVendas(ctk.CTkToplevel):
 
         self.btn_finalizar = ctk.CTkButton(self.f_checkout, text="FINALIZAR VENDA", height=55, width=220, fg_color="blue", font=("Roboto", 18, "bold"), command=self.finalizar_venda)
         self.btn_finalizar.pack(side="right", padx=20)
+
+    def atualizar_relogio(self):
+        """Script 36: Mantém o tempo real atualizado na interface"""
+        agora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        self.lbl_clock.configure(text=f"🕒 Sistema: {agora}")
+        self.after(1000, self.atualizar_relogio)
 
     def validar_numeros(self, entry):
         texto = entry.get()
@@ -164,19 +184,35 @@ class JanelaVendas(ctk.CTkToplevel):
             self.vendedor_atual = None
 
     def ajustar_frete_automatico(self, _=None):
-        """Define o valor do frete com base na logística e urgência selecionadas"""
+        """Define o valor do frete e o prazo de entrega em dias úteis (Script 36)"""
         tipo_logistica = self.seg_logistica.get()
         nivel_urgencia = self.seg_urgencia.get()
+        distancia_str = self.seg_distancia.get()
         
         valor_frete = 0.0
+        prazo_info = "---"
         
         if tipo_logistica == "Entrega":
-            if nivel_urgencia == "Normal":
-                valor_frete = 10.00
-            elif nivel_urgencia == "Urgente":
-                valor_frete = 15.00
-            elif nivel_urgencia == "Crítico":
-                valor_frete = 25.00
+            valor_frete = buscar_valor_frete_db(nivel_urgencia, distancia_str)
+            
+            # Script 36: Regra de Dias Úteis
+            dias_base = {"Normal": 5, "Urgente": 2, "Crítico": 1}.get(nivel_urgencia, 5)
+            dias_km = {"20Km": 0, "50Km": 0, "100Km": 1, "250Km": 2, "500Km": 3, ">500Km": 5}.get(distancia_str, 0)
+            total_uteis = dias_base + dias_km
+            
+            # Calcular data pulando Finais de Semana (Sáb/Dom)
+            data_chegada = datetime.now()
+            contagem = 0
+            while contagem < total_uteis:
+                data_chegada += timedelta(days=1)
+                if data_chegada.weekday() < 5: # Segunda (0) a Sexta (4)
+                    contagem += 1
+            
+            prazo_info = f"{total_uteis} dias úteis ({data_chegada.strftime('%d/%m/%Y')})"
+        else:
+            prazo_info = "Retirada Imediata"
+
+        self.lbl_prazo.configure(text=prazo_info)
         
         self.ent_frete.configure(state="normal")
         self.ent_frete.delete(0, "end")
@@ -195,10 +231,10 @@ class JanelaVendas(ctk.CTkToplevel):
             self.mostrar_feedback("❌ Produto não encontrado.")
             return
 
-        # RN01: Validação de Validade
+        # RN01 / Script 36: Validação de Validade contra relógio real
         try:
             val_prod = datetime.strptime(prod['validade'], "%d/%m/%Y")
-            if val_prod < datetime.now():
+            if val_prod.date() < datetime.now().date():
                 self.mostrar_feedback("🚫 Produto VENCIDO! Venda proibida.")
                 return
         except: pass
@@ -282,6 +318,7 @@ class JanelaVendas(ctk.CTkToplevel):
         forma = "À Vista" if self.check_avista.get() else "Prazo/Outros"
         tipo_venda = self.seg_logistica.get()
         urgencia = self.seg_urgencia.get()
+        distancia = self.seg_distancia.get()
 
         confirmar = messagebox.askyesno("Confirmar", f"Finalizar venda no valor de R$ {total:.2f}?")
         if confirmar:
@@ -293,6 +330,7 @@ class JanelaVendas(ctk.CTkToplevel):
                 forma,         # forma_pagamento
                 tipo_venda,
                 urgencia,
+                distancia,
                 self.carrinho
             )
             if id_venda:

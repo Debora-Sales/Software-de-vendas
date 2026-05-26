@@ -133,7 +133,7 @@ btn_entrar.pack(
 
 info_login = ctk.CTkLabel(
     frame,
-    text="Login padrão: admin | Senha: admin123",
+    text="Logins: Admin, Vendedor ou Estoquista",
     font=("Roboto", 12)
 )
 

@@ -89,6 +89,7 @@ def criar_tabelas():
             status_entrega TEXT DEFAULT 'Pendente',
             tipo_venda TEXT DEFAULT 'Retirada',
             urgencia TEXT DEFAULT 'Normal',
+            distancia TEXT,
             forma_pagamento TEXT, 
             FOREIGN KEY (id_vendedor) REFERENCES vendedores(barcode), 
             FOREIGN KEY (id_cliente) REFERENCES clientes(id)
@@ -107,13 +108,46 @@ def criar_tabelas():
         )
         """)
 
-        cursor.execute("SELECT * FROM usuarios WHERE nome = ?", ("admin",))
+        # Script 33: Tabela de Configuração de Fretes
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS configuracao_frete (
+            urgencia TEXT,
+            distancia TEXT,
+            valor REAL,
+            PRIMARY KEY (urgencia, distancia)
+        )
+        """)
 
-        if not cursor.fetchone():
-            cursor.execute(
-                "INSERT INTO usuarios (nome, senha, tipo) VALUES (?, ?, ?)",
-                ("admin", "admin123", "Administrador")
-            )
+        # Inicializar tabela de fretes com valores padrão se estiver vazia
+        cursor.execute("SELECT count(*) FROM configuracao_frete")
+        if cursor.fetchone()[0] == 0:
+            urgencias = ["Normal", "Urgente", "Crítico"]
+            distancias = ["20Km", "50Km", "100Km", "250Km", "500Km", ">500Km"]
+            for u in urgencias:
+                for d in distancias:
+                    # Valores base sugeridos
+                    base = 10.0 if u == "Normal" else 20.0 if u == "Urgente" else 35.0
+                    mult = 1.0
+                    if d == "100Km": mult = 2.0
+                    elif d == "250Km": mult = 4.0
+                    elif d == "500Km": mult = 8.0
+                    elif d == ">500Km": mult = 12.0
+                    cursor.execute("INSERT INTO configuracao_frete VALUES (?, ?, ?)", (u, d, base * mult))
+
+        # Script 34: Inicialização de Perfis de Usuário (Administrador, Vendedor e Estoquista)
+        usuarios_iniciais = [
+            ("Admin", "Admin123", "Administrador"),
+            ("Vendedor", "Vendedor123", "Vendedor"),
+            ("Estoquista", "Estoquista123", "Estoquista")
+        ]
+
+        for login, senha, tipo in usuarios_iniciais:
+            cursor.execute("SELECT * FROM usuarios WHERE nome = ?", (login,))
+            if not cursor.fetchone():
+                cursor.execute(
+                    "INSERT INTO usuarios (nome, senha, tipo) VALUES (?, ?, ?)",
+                    (login, senha, tipo)
+                )
 
         # Inserir um vendedor padrão para teste se não houver nenhum
         cursor.execute("SELECT count(*) FROM vendedores")
@@ -133,6 +167,8 @@ def criar_tabelas():
             cursor.execute("ALTER TABLE vendas ADD COLUMN tipo_venda TEXT DEFAULT 'Retirada'")
         if "urgencia" not in colunas:
             cursor.execute("ALTER TABLE vendas ADD COLUMN urgencia TEXT DEFAULT 'Normal'")
+        if "distancia" not in colunas:
+            cursor.execute("ALTER TABLE vendas ADD COLUMN distancia TEXT")
 
         conn.commit()
         conn.close()
@@ -159,6 +195,15 @@ def realizar_login(login_digitado, senha_digitada):
 def salvar_produto(nome, validade, quantidade, categoria, lote, preco_custo, preco_venda, estoque_minimo):
     conn = conectar()
     if conn:
+        # Script 36: Regra de Bloqueio de Cadastro Retroativo
+        try:
+            val_dt = datetime.strptime(validade, "%d/%m/%Y").date()
+            if val_dt < datetime.now().date():
+                messagebox.showwarning("Erro de Validade", "Não é permitido cadastrar produtos com validade anterior ao dia de hoje.")
+                return None
+        except ValueError:
+            pass
+
         try:
             cursor = conn.cursor()
             comando = """
@@ -234,6 +279,15 @@ def salvar_cliente(nome, endereco, telefone, cpf, cnpj, razao_social, email):
 def atualizar_produto_db(id_produto, nome, validade, quantidade, categoria, lote, preco_custo, preco_venda, estoque_minimo):
     conn = conectar()
     if conn:
+        # Script 36: Regra de Bloqueio de Atualização Retroativa
+        try:
+            val_dt = datetime.strptime(validade, "%d/%m/%Y").date()
+            if val_dt < datetime.now().date():
+                messagebox.showwarning("Erro de Validade", "Não é permitido atualizar produtos para uma validade anterior ao dia de hoje.")
+                return False
+        except ValueError:
+            pass
+
         try:
             cursor = conn.cursor()
             comando = """
@@ -493,7 +547,40 @@ def buscar_vendedor_por_barcode(barcode):
         return res[0] if res else None
     return None
 
-def registrar_venda_db(id_vendedor, id_cliente, valor_total, valor_frete, forma_pagamento, tipo_venda, urgencia, itens):
+def buscar_valor_frete_db(urgencia, distancia):
+    """Busca o valor configurado para a combinação de urgência e distância."""
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT valor FROM configuracao_frete WHERE urgencia = ? AND distancia = ?", (urgencia, distancia))
+        res = cursor.fetchone()
+        conn.close()
+        return res[0] if res else 0.0
+    return 0.0
+
+def obter_tabela_fretes_db():
+    """Retorna todas as configurações de frete."""
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT urgencia, distancia, valor FROM configuracao_frete ORDER BY urgencia, distancia")
+        res = cursor.fetchall()
+        conn.close()
+        return res
+    return []
+
+def salvar_configuracao_frete_db(urgencia, distancia, valor):
+    """Atualiza o valor de um frete específico."""
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE configuracao_frete SET valor = ? WHERE urgencia = ? AND distancia = ?", (valor, urgencia, distancia))
+        conn.commit()
+        conn.close()
+        return True
+    return False
+
+def registrar_venda_db(id_vendedor, id_cliente, valor_total, valor_frete, forma_pagamento, tipo_venda, urgencia, distancia, itens):
     """
     itens: lista de dicionarios [{'id_prod': 1, 'qnt': 2, 'preco': 10.0}, ...]
     """
@@ -505,9 +592,9 @@ def registrar_venda_db(id_vendedor, id_cliente, valor_total, valor_frete, forma_
             
             # 1. Registrar a Venda
             cursor.execute("""
-                INSERT INTO vendas (id_vendedor, id_cliente, data_venda, valor_total, valor_frete, forma_pagamento, status_entrega, tipo_venda, urgencia) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (id_vendedor, id_cliente, data_venda, valor_total, valor_frete, forma_pagamento, 'Pendente', tipo_venda, urgencia))
+                INSERT INTO vendas (id_vendedor, id_cliente, data_venda, valor_total, valor_frete, forma_pagamento, status_entrega, tipo_venda, urgencia, distancia) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (id_vendedor, id_cliente, data_venda, valor_total, valor_frete, forma_pagamento, 'Pendente', tipo_venda, urgencia, distancia))
             
             id_venda = cursor.lastrowid
 
@@ -656,4 +743,89 @@ def atualizar_status_entrega_db(id_venda, novo_status):
             return True
         except Exception as e:
             messagebox.showerror("Erro SQL", f"Erro ao atualizar status: {e}")
+    return False
+
+def obter_ranking_produtos_db():
+    """Script 37: Retorna o ranking dos produtos mais vendidos."""
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT p.nome, SUM(iv.quantidade) as total 
+            FROM itens_venda iv 
+            JOIN produtos p ON iv.id_produto = p.id 
+            GROUP BY p.id 
+            ORDER BY total DESC 
+            LIMIT 5
+        """)
+        res = cursor.fetchall()
+        conn.close()
+        return res
+    return []
+
+def obter_estoque_baixo_db():
+    """Script 37: Retorna os produtos com menor quantidade em estoque."""
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT nome, quantidade, estoque_minimo 
+            FROM produtos 
+            ORDER BY quantidade ASC 
+            LIMIT 5
+        """)
+        res = cursor.fetchall()
+        conn.close()
+        return res
+    return []
+
+def obter_ranking_vendedores_db():
+    """Script 37: Retorna o ranking de faturamento por vendedor no mês atual."""
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        mes_atual = datetime.now().strftime("%m/%Y")
+        cursor.execute("""
+            SELECT IFNULL(vended.nome, 'Desconhecido'), SUM(v.valor_total) as total 
+            FROM vendas v 
+            LEFT JOIN vendedores vended ON v.id_vendedor = vended.barcode 
+            WHERE substr(v.data_venda, 4, 7) = ? 
+            GROUP BY v.id_vendedor 
+            ORDER BY total DESC 
+            LIMIT 5
+        """, (mes_atual,))
+        res = cursor.fetchall()
+        conn.close()
+        return res
+    return []
+
+def obter_todos_usuarios_db():
+    """Script 38: Retorna a lista de todos os usuários para o painel de configurações."""
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, nome, senha, tipo FROM usuarios")
+        res = cursor.fetchall()
+        conn.close()
+        return res
+    return []
+
+def atualizar_credenciais_usuario_db(id_usuario, novo_nome, nova_senha):
+    """Script 38: Permite ao Admin alterar nome e senha de qualquer usuário."""
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            # Verifica se o novo nome já existe em outro ID para evitar erro de UNIQUE
+            cursor.execute("SELECT id FROM usuarios WHERE nome = ? AND id != ?", (novo_nome, id_usuario))
+            if cursor.fetchone():
+                messagebox.showwarning("Atenção", "Este nome de usuário já está em uso.")
+                return False
+
+            cursor.execute("UPDATE usuarios SET nome = ?, senha = ? WHERE id = ?", (novo_nome, nova_senha, id_usuario))
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            messagebox.showerror("Erro SQL", f"Erro ao atualizar credenciais: {e}")
     return False

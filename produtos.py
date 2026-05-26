@@ -1,5 +1,6 @@
 import customtkinter as ctk
 from tkinter import messagebox
+from datetime import datetime
 from database import (
     salvar_produto, 
     buscar_produto_por_id, 
@@ -282,6 +283,15 @@ class JanelaProdutos(ctk.CTkToplevel):
         if not dados["nome"] or not dados["validade"] or not dados["lote"] or not dados["categoria"]:
             messagebox.showwarning("Campos obrigatórios", "Preencha Nome, Categoria, Validade e Lote.")
             return
+
+        # Script 36: Validação de data retroativa na interface
+        try:
+            val_dt = datetime.strptime(dados["validade"], "%d/%m/%Y").date()
+            if val_dt < datetime.now().date():
+                self.mostrar_feedback("🚫 Validade vencida! Operação não permitida.")
+                return
+        except ValueError:
+            pass
 
         if self.id_produto_editando:
             sucesso = atualizar_produto_db(
