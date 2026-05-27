@@ -779,6 +779,26 @@ def obter_estoque_baixo_db():
         return res
     return []
 
+def obter_ranking_vendedores_dia_db():
+    """Script 39: Retorna o ranking de faturamento por vendedor no dia atual."""
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        hoje = datetime.now().strftime("%d/%m/%Y")
+        cursor.execute("""
+            SELECT IFNULL(vended.nome, 'Desconhecido'), SUM(v.valor_total) as total 
+            FROM vendas v 
+            JOIN vendedores vended ON v.id_vendedor = vended.barcode 
+            WHERE substr(v.data_venda, 1, 10) = ? 
+            GROUP BY v.id_vendedor 
+            ORDER BY total DESC 
+            LIMIT 5
+        """, (hoje,))
+        res = cursor.fetchall()
+        conn.close()
+        return res
+    return []
+
 def obter_ranking_vendedores_db():
     """Script 37: Retorna o ranking de faturamento por vendedor no mês atual."""
     conn = conectar()
@@ -788,12 +808,37 @@ def obter_ranking_vendedores_db():
         cursor.execute("""
             SELECT IFNULL(vended.nome, 'Desconhecido'), SUM(v.valor_total) as total 
             FROM vendas v 
-            LEFT JOIN vendedores vended ON v.id_vendedor = vended.barcode 
+            JOIN vendedores vended ON v.id_vendedor = vended.barcode 
             WHERE substr(v.data_venda, 4, 7) = ? 
             GROUP BY v.id_vendedor 
             ORDER BY total DESC 
             LIMIT 5
         """, (mes_atual,))
+        res = cursor.fetchall()
+        conn.close()
+        return res
+    return []
+
+def obter_ranking_vendedores_semestre_db():
+    """Script 39: Retorna o ranking de faturamento por vendedor no semestre atual."""
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        agora = datetime.now()
+        ano_atual = agora.strftime("%Y")
+        # Define o intervalo do semestre: 1 (Jan-Jun) ou 2 (Jul-Dez)
+        mes_inicio, mes_fim = (1, 6) if agora.month <= 6 else (7, 12)
+        
+        cursor.execute("""
+            SELECT IFNULL(vended.nome, 'Desconhecido'), SUM(v.valor_total) as total 
+            FROM vendas v 
+            JOIN vendedores vended ON v.id_vendedor = vended.barcode 
+            WHERE substr(v.data_venda, 7, 4) = ? 
+              AND CAST(substr(v.data_venda, 4, 2) AS UNSIGNED) BETWEEN ? AND ?
+            GROUP BY v.id_vendedor 
+            ORDER BY total DESC 
+            LIMIT 5
+        """, (str(ano_atual), mes_inicio, mes_fim))
         res = cursor.fetchall()
         conn.close()
         return res
@@ -829,3 +874,40 @@ def atualizar_credenciais_usuario_db(id_usuario, novo_nome, nova_senha):
         except Exception as e:
             messagebox.showerror("Erro SQL", f"Erro ao atualizar credenciais: {e}")
     return False
+
+def ajustar_estoque_db(id_produto, quantidade_ajuste):
+    """Script 40: Realiza entrada (positivo) ou saída (negativo) manual no estoque."""
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            # Verifica estoque atual
+            cursor.execute("SELECT quantidade FROM produtos WHERE id = ?", (id_produto,))
+            res = cursor.fetchone()
+            
+            if res:
+                nova_qtd = res[0] + quantidade_ajuste
+                if nova_qtd < 0:
+                    messagebox.showwarning("Atenção", "Operação cancelada: o estoque não pode ficar negativo.")
+                    return False
+                
+                cursor.execute("UPDATE produtos SET quantidade = ? WHERE id = ?", (nova_qtd, id_produto))
+                conn.commit()
+                conn.close()
+                return True
+            else:
+                messagebox.showerror("Erro", "Produto não encontrado.")
+        except Exception as e:
+            messagebox.showerror("Erro SQL", f"Erro ao ajustar estoque: {e}")
+    return False
+
+def obter_totais_estoque_db():
+    """Script 40: Retorna o total de itens cadastrados e a soma de todas as unidades."""
+    conn = conectar()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(id), IFNULL(SUM(quantidade), 0) FROM produtos")
+        res = cursor.fetchone()
+        conn.close()
+        return res if res else (0, 0)
+    return (0, 0)

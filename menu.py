@@ -8,6 +8,7 @@ from funcionarios import JanelaFuncionarios
 from vendas import JanelaVendas
 from relatorios import JanelaRelatorios
 from configuracoes import JanelaConfiguracoes
+from estoque import JanelaEstoque
 from database import (
     obter_ranking_produtos_db,
     obter_estoque_baixo_db,
@@ -62,6 +63,9 @@ class abrir_menu(ctk.CTkToplevel):
         if self.perfil in ["Administrador", "Vendedor"]:
             self.criar_botao("Clientes", self.abrir_clientes)
             self.criar_botao("Vendas", self.abrir_vendas)
+
+        if self.perfil in ["Administrador", "Vendedor", "Estoquista"]:
+            self.criar_botao("Controle de Estoque", self.abrir_estoque)
 
         if self.perfil == "Administrador":
             self.criar_botao("Funcionários", self.abrir_funcionarios)
@@ -197,3 +201,6 @@ class abrir_menu(ctk.CTkToplevel):
 
     def abrir_configuracoes(self):
         JanelaConfiguracoes(self)
+
+    def abrir_estoque(self):
+        JanelaEstoque(self, self.perfil)

@@ -349,3 +349,13 @@ Quando logarmos como Administrador, ele devera nos mostrar informações relevan
 # script 39
 
 Abaixo do indicador de vendedores do mês, adicione modulos iguais porém representando "Dia" e "Semestre". A ordem deverá ser "Dia" abaixo "Mês" e logo abaixo "Semestre".
+
+
+# script 40
+
+Iremos adicionar um novo módulo para controle de estoque: 
+-Os estoquistas: Terão acesso ao terminal de cadastro de produtos e controle de estoque.
+-gerecniamento,inventário
+-vai aparecer pra vendedor e estoquista esse módulo, o adm pode ter acesso também 
+-entrada e saída de produtos
+-total de produtos
