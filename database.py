@@ -2,6 +2,7 @@ import sqlite3
 from tkinter import messagebox
 import random
 from datetime import datetime
+import re
 
 DB_NAME = "xo_sujeira.db"
 
@@ -20,6 +21,9 @@ def criar_tabelas():
     if conn:
         cursor = conn.cursor()
 
+        # Script 41: A limpeza automática foi removida para garantir a persistência das vendas 
+        # realizadas entre diferentes sessões de login (Vendedor -> Administrador).
+        
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,7 +70,8 @@ def criar_tabelas():
             estado_civil TEXT,
             endereco TEXT,
             cargo TEXT,
-            salario REAL
+            salario REAL,
+            email TEXT
         )
         """)
 
@@ -170,6 +175,50 @@ def criar_tabelas():
         if "distancia" not in colunas:
             cursor.execute("ALTER TABLE vendas ADD COLUMN distancia TEXT")
 
+        # Script 41: Migração para adicionar e-mail aos funcionários se não existir
+        cursor.execute("PRAGMA table_info(funcionarios)")
+        colunas_func = [info[1] for info in cursor.fetchall()]
+        if "email" not in colunas_func:
+            cursor.execute("ALTER TABLE funcionarios ADD COLUMN email TEXT")
+
+        # Script 41: Seed de dados realistas (Produtos, Clientes e Vendas para contexto)
+        cursor.execute("SELECT count(*) FROM produtos")
+        if cursor.fetchone()[0] == 0:
+            # Script 41: Produtos com preços reais (Ex: Custo 1.00 -> Venda 2.00)
+            prods = [
+                ("Detergente Neutro 500ml", "31/12/2026", 85, "Limpeza", "99", 1.00, 2.00, 20),
+                ("Desinfetante Lavanda 2L", "15/06/2027", 40, "Limpeza", "102", 3.50, 8.50, 20),
+                ("Água Sanitária 1L", "20/08/2026", 60, "Higiene", "55", 1.50, 4.00, 20),
+                ("Multiuso Tradicional", "10/01/2027", 30, "Limpeza", "22", 2.50, 5.50, 20)
+            ]
+            cursor.executemany("""
+                INSERT INTO produtos (nome, validade, quantidade, categoria, lote, preco_custo, preco_venda, estoque_minimo) 
+                VALUES (?,?,?,?,?,?,?,?)
+            """, prods)
+            
+            # Cliente para amostra contextual
+            cursor.execute("SELECT count(*) FROM clientes")
+            if cursor.fetchone()[0] == 0:
+                cursor.execute("""
+                    INSERT INTO clientes (nome, endereco, telefone, email) 
+                    VALUES (?,?,?,?)
+                """, ("Limpeza Total Ltda", "Rua das Flores, 123, Centro, São Paulo - Bloco B", "(11) 97777-6666", "vendas@limpezatotal.com.br"))
+                id_cli = cursor.lastrowid
+                
+                # Histórico de venda realista para alimentar Dashboard/Relatórios
+                hoje = datetime.now().strftime("%d/%m/%Y %H:%M")
+                cursor.execute("""
+                    INSERT INTO vendas (id_vendedor, id_cliente, data_venda, valor_total, valor_frete, forma_pagamento, status_entrega, tipo_venda, urgencia, distancia) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, ("12345", id_cli, hoje, 50.00, 10.00, "À Vista", "Entregue", "Entrega", "Normal", "20Km"))
+                id_v = cursor.lastrowid
+                
+                # Itens da venda para compor o lucro
+                cursor.execute("""
+                    INSERT INTO itens_venda (id_venda, id_produto, quantidade, preco_unitario) 
+                    VALUES (?,?,?,?)
+                """, (id_v, 1, 20, 2.50))
+
         conn.commit()
         conn.close()
 
@@ -197,9 +246,23 @@ def salvar_produto(nome, validade, quantidade, categoria, lote, preco_custo, pre
     if conn:
         # Script 36: Regra de Bloqueio de Cadastro Retroativo
         try:
+            # Script 41: Validação de Limites (Estoque, Mínimo e Lote)
+            if int(quantidade) > 100 or int(estoque_minimo) > 100:
+                return None
+            
+            if lote and len(str(lote)) > 10:
+                return None
+
+            # Script 41: Arredondamento para evitar decimais infinitos no SQLite
+            preco_custo = round(float(preco_custo), 2)
+            preco_venda = round(float(preco_venda), 2)
+
+            # Script 41: Ajuste de preço irreal (Venda deve ser > Custo e ambos > 0)
+            if float(preco_custo) <= 0 or float(preco_venda) <= float(preco_custo):
+                return None
+
             val_dt = datetime.strptime(validade, "%d/%m/%Y").date()
             if val_dt < datetime.now().date():
-                messagebox.showwarning("Erro de Validade", "Não é permitido cadastrar produtos com validade anterior ao dia de hoje.")
                 return None
         except ValueError:
             pass
@@ -227,12 +290,16 @@ def salvar_produto(nome, validade, quantidade, categoria, lote, preco_custo, pre
             conn.close()
             return id_gerado
         except Exception as e:
-            messagebox.showerror("Erro SQL", f"Erro ao salvar produto: {e}")
             return None
     return None
 
 def salvar_cliente(nome, endereco, telefone, cpf, cnpj, razao_social, email):
     conn = conectar()
+
+    # Script 41: Validação rigorosa de e-mail (exige user, @, dominio e .extensão)
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if email and not re.match(email_regex, email):
+        return None
 
     if conn:
         try:
@@ -281,9 +348,23 @@ def atualizar_produto_db(id_produto, nome, validade, quantidade, categoria, lote
     if conn:
         # Script 36: Regra de Bloqueio de Atualização Retroativa
         try:
+            # Script 41: Validação de Limites (Estoque, Mínimo e Lote)
+            if int(quantidade) > 100 or int(estoque_minimo) > 100:
+                return False
+
+            if lote and len(str(lote)) > 10:
+                return False
+
+            # Script 41: Arredondamento para evitar decimais infinitos
+            preco_custo = round(float(preco_custo), 2)
+            preco_venda = round(float(preco_venda), 2)
+
+            # Script 41: Ajuste de preço irreal (Venda deve ser > Custo e ambos > 0)
+            if float(preco_custo) <= 0 or float(preco_venda) <= float(preco_custo):
+                return False
+
             val_dt = datetime.strptime(validade, "%d/%m/%Y").date()
             if val_dt < datetime.now().date():
-                messagebox.showwarning("Erro de Validade", "Não é permitido atualizar produtos para uma validade anterior ao dia de hoje.")
                 return False
         except ValueError:
             pass
@@ -317,7 +398,6 @@ def atualizar_produto_db(id_produto, nome, validade, quantidade, categoria, lote
             conn.close()
             return True
         except Exception as e:
-            messagebox.showerror("Erro SQL", f"Erro ao atualizar produto: {e}")
             return False
     return False
 
@@ -408,6 +488,12 @@ def buscar_cliente_por_id(id_cliente):
 
 def atualizar_cliente_db(id_cliente, nome, endereco, telefone, cpf, cnpj, razao_social, email):
     conn = conectar()
+
+    # Script 41: Validação rigorosa de e-mail
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if email and not re.match(email_regex, email):
+        return False
+
     if conn:
         try:
             cursor = conn.cursor()
@@ -461,20 +547,26 @@ def gerar_id_funcionario():
                 return novo_id
     return None
 
-def salvar_funcionario(nome, cpf, nascimento, estado_civil, endereco, cargo, salario):
+def salvar_funcionario(nome, cpf, nascimento, estado_civil, endereco, cargo, salario, email):
     id_gerado = gerar_id_funcionario()
     if id_gerado is None:
         messagebox.showerror("Erro", "Não foi possível gerar um ID único para o funcionário.")
         return None
+
+    # Script 41: Validação rigorosa de e-mail
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if email and not re.match(email_regex, email):
+        return None
+
     conn = conectar()
     if conn:
         try:
             cursor = conn.cursor()
             comando = """
-            INSERT INTO funcionarios (id, nome, cpf, nascimento, estado_civil, endereco, cargo, salario)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO funcionarios (id, nome, cpf, nascimento, estado_civil, endereco, cargo, salario, email)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-            cursor.execute(comando, (id_gerado, nome, cpf, nascimento, estado_civil, endereco, cargo, salario))
+            cursor.execute(comando, (id_gerado, nome, cpf, nascimento, estado_civil, endereco, cargo, salario, email))
             conn.commit()
             conn.close()
             return id_gerado
@@ -500,23 +592,29 @@ def buscar_funcionario_por_id_func(id_func): # Busca por ID
                     "estado_civil": res[4],
                     "endereco": res[5],
                     "cargo": res[6],
-                    "salario": res[7]
+                    "salario": res[7],
+                    "email": res[8]
                 }
         except Exception as e:
             messagebox.showerror("Erro SQL", f"Erro ao buscar funcionário: {e}")
     return None
 
-def atualizar_funcionario_db(id_func, nome, cpf, nascimento, estado_civil, endereco, cargo, salario): # Atualiza por ID
+def atualizar_funcionario_db(id_func, nome, cpf, nascimento, estado_civil, endereco, cargo, salario, email): # Atualiza por ID
+    # Script 41: Validação rigorosa de e-mail
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if email and not re.match(email_regex, email):
+        return False
+
     conn = conectar()
     if conn:
         try:
             cursor = conn.cursor()
             comando = """
             UPDATE funcionarios SET
-                nome=?, cpf=?, nascimento=?, estado_civil=?, endereco=?, cargo=?, salario=?
+                nome=?, cpf=?, nascimento=?, estado_civil=?, endereco=?, cargo=?, salario=?, email=?
             WHERE id=?
             """
-            cursor.execute(comando, (nome, cpf, nascimento, estado_civil, endereco, cargo, salario, id_func))
+            cursor.execute(comando, (nome, cpf, nascimento, estado_civil, endereco, cargo, salario, email, id_func))
             conn.commit()
             conn.close()
             return True
@@ -624,7 +722,6 @@ def registrar_venda_db(id_vendedor, id_cliente, valor_total, valor_frete, forma_
         except Exception as e:
             conn.rollback()
             conn.close()
-            messagebox.showerror("Erro na Venda", str(e))
             return None
     return None
 
@@ -788,7 +885,7 @@ def obter_ranking_vendedores_dia_db():
         cursor.execute("""
             SELECT IFNULL(vended.nome, 'Desconhecido'), SUM(v.valor_total) as total 
             FROM vendas v 
-            JOIN vendedores vended ON v.id_vendedor = vended.barcode 
+            LEFT JOIN vendedores vended ON v.id_vendedor = vended.barcode 
             WHERE substr(v.data_venda, 1, 10) = ? 
             GROUP BY v.id_vendedor 
             ORDER BY total DESC 
@@ -808,7 +905,7 @@ def obter_ranking_vendedores_db():
         cursor.execute("""
             SELECT IFNULL(vended.nome, 'Desconhecido'), SUM(v.valor_total) as total 
             FROM vendas v 
-            JOIN vendedores vended ON v.id_vendedor = vended.barcode 
+            LEFT JOIN vendedores vended ON v.id_vendedor = vended.barcode 
             WHERE substr(v.data_venda, 4, 7) = ? 
             GROUP BY v.id_vendedor 
             ORDER BY total DESC 
@@ -832,9 +929,9 @@ def obter_ranking_vendedores_semestre_db():
         cursor.execute("""
             SELECT IFNULL(vended.nome, 'Desconhecido'), SUM(v.valor_total) as total 
             FROM vendas v 
-            JOIN vendedores vended ON v.id_vendedor = vended.barcode 
-            WHERE substr(v.data_venda, 7, 4) = ? 
-              AND CAST(substr(v.data_venda, 4, 2) AS UNSIGNED) BETWEEN ? AND ?
+            LEFT JOIN vendedores vended ON v.id_vendedor = vended.barcode 
+            WHERE substr(v.data_venda, 7, 4) = ? -- Filtra o Ano
+              AND CAST(substr(v.data_venda, 4, 2) AS INTEGER) BETWEEN ? AND ? -- Filtra o Semestre
             GROUP BY v.id_vendedor 
             ORDER BY total DESC 
             LIMIT 5
@@ -888,9 +985,12 @@ def ajustar_estoque_db(id_produto, quantidade_ajuste):
             if res:
                 nova_qtd = res[0] + quantidade_ajuste
                 if nova_qtd < 0:
-                    messagebox.showwarning("Atenção", "Operação cancelada: o estoque não pode ficar negativo.")
                     return False
                 
+                # Script 41: Trava de Segurança para Limite Máximo
+                if nova_qtd > 100:
+                    return False
+
                 cursor.execute("UPDATE produtos SET quantidade = ? WHERE id = ?", (nova_qtd, id_produto))
                 conn.commit()
                 conn.close()
@@ -911,3 +1011,18 @@ def obter_totais_estoque_db():
         conn.close()
         return res if res else (0, 0)
     return (0, 0)
+
+def limpar_historico_vendas_db():
+    """Script 41: Apaga todos os registros de vendas e seus respectivos itens."""
+    conn = conectar()
+    if conn:
+        try:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM itens_venda")
+            cursor.execute("DELETE FROM vendas")
+            conn.commit()
+            conn.close()
+            return True
+        except Exception as e:
+            messagebox.showerror("Erro SQL", f"Erro ao limpar histórico: {e}")
+    return False

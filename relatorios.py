@@ -7,7 +7,8 @@ from database import (
     obter_entregas_pendentes_db,
     atualizar_status_entrega_db,
     obter_tabela_fretes_db,
-    salvar_configuracao_frete_db
+    salvar_configuracao_frete_db,
+    limpar_historico_vendas_db
 )
 
 class JanelaRelatorios(ctk.CTkToplevel):
@@ -94,6 +95,10 @@ class JanelaRelatorios(ctk.CTkToplevel):
         self.scroll_historico = ctk.CTkScrollableFrame(self.tab_historico, width=850, height=450)
         self.scroll_historico.pack(padx=10, pady=5, fill="both", expand=True)
 
+        # Script 41: Botão para limpar histórico de vendas
+        self.btn_limpar_hist = ctk.CTkButton(self.tab_historico, text="🗑️ Limpar Todo o Histórico", fg_color="red", command=self.confirmar_limpeza_historico)
+        self.btn_limpar_hist.pack(pady=10)
+
     def _setup_ui_logistica(self):
         header = ctk.CTkFrame(self.tab_logistica, fg_color="gray30")
         header.pack(fill="x", padx=10, pady=5)
@@ -112,6 +117,13 @@ class JanelaRelatorios(ctk.CTkToplevel):
         if atualizar_status_entrega_db(id_venda, novo_status):
             messagebox.showinfo("Logística", f"Venda #{id_venda} marcada como '{novo_status}'.")
             self.carregar_dados()
+
+    def confirmar_limpeza_historico(self):
+        """Script 41: Solicita confirmação antes de apagar o banco de vendas."""
+        if messagebox.askyesno("Confirmar Limpeza", "⚠️ ATENÇÃO: Deseja realmente apagar TODO o histórico de vendas?\nEsta ação não pode ser desfeita."):
+            if limpar_historico_vendas_db():
+                messagebox.showinfo("Sucesso", "Histórico de vendas removido com sucesso.")
+                self.carregar_dados()
 
     def carregar_dados(self):
         """Limpa os frames e recarrega os dados do Banco de Dados."""

@@ -84,6 +84,7 @@ class JanelaVendas(ctk.CTkToplevel):
         self.ent_qnt = ctk.CTkEntry(self.frame_qnt_p, placeholder_text="Qtd", width=70)
         self.ent_qnt.pack()
         self.ent_qnt.insert(0, "1")
+        self.ent_qnt.bind("<KeyRelease>", self.validar_quantidade_venda)
 
         self.btn_add = ctk.CTkButton(self.frame_add, text="+ Adicionar", fg_color="green", command=self.adicionar_item)
         self.btn_add.pack(side="left", padx=10, pady=(15, 0))
@@ -151,6 +152,27 @@ class JanelaVendas(ctk.CTkToplevel):
             entry.delete(0, "end")
             entry.insert(0, "".join(filter(str.isdigit, texto)))
             
+    def validar_quantidade_venda(self, event):
+        """Script 41: Garante que a quantidade na venda não ultrapasse 100 com feedback visual."""
+        texto = self.ent_qnt.get()
+        limpo = "".join(filter(str.isdigit, texto))
+        
+        excedeu = False
+        if len(limpo) > 3:
+            limpo = limpo[:3]
+            excedeu = True
+
+        if limpo and int(limpo) > 100:
+            limpo = "100"
+            excedeu = True
+            
+        if excedeu:
+            self.mostrar_feedback("⚠️ Máximo de 100 unidades por item.", "red")
+
+        if texto != limpo:
+            self.ent_qnt.delete(0, "end")
+            self.ent_qnt.insert(0, limpo)
+
     def mostrar_feedback(self, mensagem, cor="red"):
         """Exibe uma mensagem na janela por 3 segundos e depois limpa"""
         self.lbl_status.configure(text=mensagem, text_color=cor)
@@ -334,8 +356,10 @@ class JanelaVendas(ctk.CTkToplevel):
                 self.carrinho
             )
             if id_venda:
-                messagebox.showinfo("Sucesso", f"Venda #{id_venda} realizada com sucesso!")
+                self.mostrar_feedback(f"✅ Venda #{id_venda} realizada com sucesso!", "green")
                 self.carrinho = []
                 self.cliente_selecionado = None
                 self.vendedor_atual = None
-                self.destroy()
+                self.after(2000, self.destroy)
+            else:
+                self.mostrar_feedback("❌ Erro ao registrar venda (Verifique estoque).")

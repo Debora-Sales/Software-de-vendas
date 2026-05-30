@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import re
 from tkinter import messagebox
 from database import (
     salvar_funcionario,
@@ -70,6 +71,10 @@ class JanelaFuncionarios(ctk.CTkToplevel):
         ctk.CTkLabel(self.frame_form, text="Cargo:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
         self.ent_cargo = self.criar_entry(self.frame_form, "Ex: Vendedor")
         self.ent_cargo.pack(pady=(0, 8))
+
+        ctk.CTkLabel(self.frame_form, text="E-mail Pessoal:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
+        self.ent_email = self.criar_entry(self.frame_form, "exemplo@gmail.com")
+        self.ent_email.pack(pady=(0, 8))
 
         ctk.CTkLabel(self.frame_form, text="Salário:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
         self.ent_salario = self.criar_entry(self.frame_form, "R$ 0,00")
@@ -180,7 +185,8 @@ class JanelaFuncionarios(ctk.CTkToplevel):
             self.txt_resultado.delete("1.0", "end")
             info = f"FUNCIONÁRIO ENCONTRADO:\n\n"
             info += f"Matrícula: {res['id']} | Cargo: {res['cargo']}\n"
-            info += f"CPF: {res['cpf']} | Salário: R$ {res['salario']:,.2f}"
+            info += f"CPF: {res['cpf']} | E-mail: {res['email']}\n"
+            info += f"Salário: R$ {res['salario']:,.2f}"
             self.txt_resultado.insert("0.0", info)
             self.txt_resultado.configure(state="disabled")
             
@@ -198,6 +204,7 @@ class JanelaFuncionarios(ctk.CTkToplevel):
         self.ent_civil.delete(0, "end"); self.ent_civil.insert(0, self.func_atual['estado_civil'] or "")
         self.ent_end.delete(0, "end"); self.ent_end.insert(0, self.func_atual['endereco'] or "")
         self.ent_cargo.delete(0, "end"); self.ent_cargo.insert(0, self.func_atual['cargo'] or "")
+        self.ent_email.delete(0, "end"); self.ent_email.insert(0, self.func_atual['email'] or "")
         
         self.ent_salario.delete(0, "end")
         self.ent_salario.insert(0, f"R$ {self.func_atual['salario']:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
@@ -212,10 +219,16 @@ class JanelaFuncionarios(ctk.CTkToplevel):
                 self.limpar()
 
     def validar_e_salvar(self):
-        nome, cpf = self.ent_nome.get(), self.ent_cpf.get()
+        nome, cpf, email = self.ent_nome.get(), self.ent_cpf.get(), self.ent_email.get()
         
-        if not nome or not cpf:
-            self.mostrar_feedback("⚠️ Nome e CPF são obrigatórios.")
+        if not nome or not cpf or not email:
+            self.mostrar_feedback("⚠️ Nome, CPF e E-mail são obrigatórios.")
+            return
+
+        # Script 41: Validação rigorosa de e-mail (Ex: nome@dominio.com)
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, email):
+            self.mostrar_feedback("❌ E-mail incompleto (ex: nome@gmail.com).")
             return
             
         try:
@@ -226,12 +239,17 @@ class JanelaFuncionarios(ctk.CTkToplevel):
             self.mostrar_feedback("❌ Salário inválido.")
             return
 
+        # Script 41: Validação de salário irreal (deve ser positivo)
+        if salario <= 0:
+            self.mostrar_feedback("❌ O salário informado é inválido/irreal.")
+            return
+
         if self.id_editando:
-            if atualizar_funcionario_db(self.id_editando, nome, cpf, self.ent_nasc.get(), self.ent_civil.get(), self.ent_end.get(), self.ent_cargo.get(), salario):
+            if atualizar_funcionario_db(self.id_editando, nome, cpf, self.ent_nasc.get(), self.ent_civil.get(), self.ent_end.get(), self.ent_cargo.get(), salario, email):
                 self.mostrar_feedback("✅ Dados atualizados!", "green")
                 self.limpar()
         else:
-            novo_id = salvar_funcionario(nome, cpf, self.ent_nasc.get(), self.ent_civil.get(), self.ent_end.get(), self.ent_cargo.get(), salario)
+            novo_id = salvar_funcionario(nome, cpf, self.ent_nasc.get(), self.ent_civil.get(), self.ent_end.get(), self.ent_cargo.get(), salario, email)
             if novo_id: 
                 self.mostrar_feedback(f"✅ Cadastrado! ID: {novo_id}", "green")
                 self.limpar()

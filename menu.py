@@ -12,7 +12,9 @@ from estoque import JanelaEstoque
 from database import (
     obter_ranking_produtos_db,
     obter_estoque_baixo_db,
-    obter_ranking_vendedores_db
+    obter_ranking_vendedores_db,
+    obter_ranking_vendedores_dia_db,
+    obter_ranking_vendedores_semestre_db
 )
 
 
@@ -139,14 +141,18 @@ class abrir_menu(ctk.CTkToplevel):
             txt = f"• {nome[:15]}... [{qtd}/{mini}]"
             ctk.CTkLabel(col_est, text=txt, font=("", 11), text_color=cor, anchor="w").pack(fill="x", padx=10, pady=2)
 
-        # 3. Ranking Vendedores (Mês)
-        col_vend = ctk.CTkFrame(self.frame_dash, fg_color="gray20", corner_radius=10)
-        col_vend.grid(row=0, column=2, sticky="nsew", padx=5)
-        ctk.CTkLabel(col_vend, text="💰 Top Vendedores (Mês)", font=("", 14, "bold"), text_color="cyan").pack(pady=10)
+        # 3. Coluna de Vendedores (Dia, Mês, Semestre) - Script 39
+        col_vendedores = ctk.CTkFrame(self.frame_dash, fg_color="transparent")
+        col_vendedores.grid(row=0, column=2, sticky="nsew", padx=5)
+
+        # Ranking Dia
+        self.criar_card_vendedor(col_vendedores, "💰 Vendas do Dia", obter_ranking_vendedores_dia_db(), "cyan")
         
-        for i, (nome, total) in enumerate(obter_ranking_vendedores_db(), 1):
-            txt = f"{i}º {nome[:12]} - R$ {total:,.0f}"
-            ctk.CTkLabel(col_vend, text=txt, font=("", 11), anchor="w").pack(fill="x", padx=10, pady=2)
+        # Ranking Mês
+        self.criar_card_vendedor(col_vendedores, "📅 Top Vendedores (Mês)", obter_ranking_vendedores_db(), "lightgreen")
+        
+        # Ranking Semestre
+        self.criar_card_vendedor(col_vendedores, "🏛️ Performance Semestral", obter_ranking_vendedores_semestre_db(), "yellow")
 
         # Botão de Atualização Manual do Dashboard
         ctk.CTkButton(
@@ -157,6 +163,16 @@ class abrir_menu(ctk.CTkToplevel):
             fg_color="#333333",
             command=self._refresh_dash
         ).pack(pady=10)
+
+    def criar_card_vendedor(self, master, titulo, dados, cor_titulo):
+        """Gera um sub-frame para os rankings de vendedores."""
+        f = ctk.CTkFrame(master, fg_color="gray20", corner_radius=10)
+        f.pack(fill="x", pady=(0, 10))
+        ctk.CTkLabel(f, text=titulo, font=("", 13, "bold"), text_color=cor_titulo).pack(pady=5)
+        
+        for i, (nome, total) in enumerate(dados, 1):
+            txt = f"{i}º {nome[:12]} - R$ {total:,.0f}"
+            ctk.CTkLabel(f, text=txt, font=("", 10), anchor="w").pack(fill="x", padx=10)
 
     def _refresh_dash(self):
         """Recarrega os widgets do dashboard."""

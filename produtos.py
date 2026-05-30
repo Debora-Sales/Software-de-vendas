@@ -54,10 +54,12 @@ class JanelaProdutos(ctk.CTkToplevel):
         ctk.CTkLabel(self.frame_form, text="Nome do Produto:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
         self.ent_nome = self.criar_entry(self.frame_form, "Ex: Detergente Neutro 500ml")
         self.ent_nome.pack(pady=(0, 10))
+        self.ent_nome.bind("<KeyRelease>", self.validar_nome)
 
         ctk.CTkLabel(self.frame_form, text="Categoria:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
         self.ent_categoria = self.criar_entry(self.frame_form, "Ex: Limpeza, Higiene")
         self.ent_categoria.pack(pady=(0, 10))
+        self.ent_categoria.bind("<KeyRelease>", self.validar_categoria)
 
         ctk.CTkLabel(self.frame_form, text="Lote:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
         self.ent_lote = self.criar_entry(self.frame_form, "Apenas números")
@@ -71,22 +73,28 @@ class JanelaProdutos(ctk.CTkToplevel):
         self.ent_qnt = self.criar_entry(self.frame_form, "0 a 100")
         self.ent_qnt.pack(pady=(0, 10))
 
-        ctk.CTkLabel(self.frame_form, text="Estoque Mínimo (Alerta):", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
+        ctk.CTkLabel(self.frame_form, text="Estoque Mínimo (Padrão 20):", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
         self.ent_min = self.criar_entry(self.frame_form, "Quantidade para aviso")
         self.ent_min.pack(pady=(0, 10))
+        self.ent_min.insert(0, "20") # Script 41: Valor padrão inicial
 
         ctk.CTkLabel(self.frame_form, text="Preço de Custo:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_custo = self.criar_entry(self.frame_form, "R$ 0,00")
+        self.ent_custo = self.criar_entry(self.frame_form, "Ex: 1.00")
         self.ent_custo.pack(pady=(0, 10))
 
         ctk.CTkLabel(self.frame_form, text="Preço de Venda:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_venda = self.criar_entry(self.frame_form, "R$ 0,00")
+        self.ent_venda = self.criar_entry(self.frame_form, "Ex: 2.00")
         self.ent_venda.pack(pady=(0, 10))
 
-        self.ent_lote.bind("<KeyRelease>", lambda e: self.validar_apenas_numeros(self.ent_lote))
+        # Script 41: Refinamento de bindings para validação em tempo real
+        self.ent_lote.bind("<KeyRelease>", self.validar_lote)
         self.ent_validade.bind("<KeyRelease>", self.formatar_data)
         self.ent_qnt.bind("<KeyRelease>", self.validar_estoque)
-        self.ent_min.bind("<KeyRelease>", lambda e: self.validar_apenas_numeros(self.ent_min))
+        self.ent_min.bind("<KeyRelease>", self.validar_estoque_minimo)
+        
+        # Prevenção de preenchimento de lixo nos campos de preço
+        self.ent_custo.bind("<KeyRelease>", lambda e: self.validar_caracteres_preco(self.ent_custo))
+        self.ent_venda.bind("<KeyRelease>", lambda e: self.validar_caracteres_preco(self.ent_venda))
         self.ent_custo.bind("<FocusOut>", lambda e: self.formatar_moeda(self.ent_custo))
         self.ent_venda.bind("<FocusOut>", lambda e: self.formatar_moeda(self.ent_venda))
 
@@ -154,6 +162,20 @@ class JanelaProdutos(ctk.CTkToplevel):
 
     # --- MÉTODOS DE FORMATAÇÃO E VALIDAÇÃO (SCRIPT 24) ---
 
+    def validar_nome(self, event):
+        """Script 41: Limita o nome a 50 caracteres em tempo real."""
+        texto = self.ent_nome.get()
+        if len(texto) > 50:
+            self.ent_nome.delete(50, "end")
+            self.mostrar_feedback("⚠️ Nome atingiu o limite de 50 caracteres.", "orange")
+
+    def validar_categoria(self, event):
+        """Script 41: Limita a categoria a 30 caracteres em tempo real."""
+        texto = self.ent_categoria.get()
+        if len(texto) > 30:
+            self.ent_categoria.delete(30, "end")
+            self.mostrar_feedback("⚠️ Categoria atingiu o limite de 30 caracteres.", "orange")
+
     def validar_apenas_numeros(self, entry):
         texto = entry.get()
         if not texto.isdigit() and texto != "":
@@ -175,20 +197,76 @@ class JanelaProdutos(ctk.CTkToplevel):
         self.ent_validade.delete(0, "end")
         self.ent_validade.insert(0, novo_texto)
 
+    def validar_caracteres_preco(self, entry):
+        """Script 41: Permite apenas números, ponto e vírgula e limita o tamanho."""
+        texto = entry.get()
+        # Permite apenas dígitos, ponto e vírgula. Remove 'R$' se o usuário tentar colar.
+        permitidos = "0123456789.,"
+        limpo = "".join(filter(lambda x: x in permitidos, texto))
+        
+        if len(limpo) > 10:
+            limpo = limpo[:10]
+            self.mostrar_feedback("⚠️ Preço muito longo (máx. 10 caracteres).", "orange")
+        elif texto != limpo:
+            self.mostrar_feedback("⚠️ Apenas números e separadores no preço.", "orange")
+
+        if texto != limpo:
+            entry.delete(0, "end")
+            entry.insert(0, limpo)
+
+    def validar_lote(self, event):
+        """Script 41: Limita o lote a 10 dígitos com feedback visual."""
+        texto = self.ent_lote.get()
+        limpo = "".join(filter(str.isdigit, texto))
+        if len(limpo) > 10:
+            limpo = limpo[:10]
+            self.mostrar_feedback("⚠️ Limite do Lote: 10 dígitos.", "red")
+        
+        if texto != limpo:
+            self.ent_lote.delete(0, "end")
+            self.ent_lote.insert(0, limpo)
+
+    def validar_estoque_minimo(self, event):
+        """Script 41: Limita o estoque mínimo a 100 com feedback visual automático."""
+        texto = self.ent_min.get()
+        limpo = "".join(filter(str.isdigit, texto))
+        
+        excedeu = False
+        if len(limpo) > 3:
+            limpo = limpo[:3]
+            excedeu = True
+        
+        if limpo and int(limpo) > 100:
+            limpo = "100"
+            excedeu = True
+            
+        if excedeu:
+            self.mostrar_feedback("⚠️ Estoque mínimo não pode exceder 100.", "red")
+        
+        if texto != limpo:
+            self.ent_min.delete(0, "end")
+            self.ent_min.insert(0, limpo)
+
     def validar_estoque(self, event):
-        self.validar_apenas_numeros(self.ent_qnt)
+        """Script 41: Limita a quantidade em estoque a 100 com feedback visual automático."""
         texto = self.ent_qnt.get()
-        if texto:
-            try:
-                val = int(texto)
-                if val > 100:
-                    self.ent_qnt.delete(0, "end")
-                    self.ent_qnt.insert(0, "100")
-                elif val < 0:
-                    self.ent_qnt.delete(0, "end")
-                    self.ent_qnt.insert(0, "0")
-            except ValueError:
-                pass
+        limpo = "".join(filter(str.isdigit, texto))
+        
+        excedeu = False
+        if len(limpo) > 3:
+            limpo = limpo[:3]
+            excedeu = True
+            
+        if limpo and int(limpo) > 100:
+            limpo = "100"
+            excedeu = True
+            
+        if excedeu:
+            self.mostrar_feedback("⚠️ A quantidade não pode exceder 100 unidades.", "red")
+            
+        if texto != limpo:
+            self.ent_qnt.delete(0, "end")
+            self.ent_qnt.insert(0, limpo)
 
     def formatar_moeda(self, entry):
         texto = entry.get().replace("R$", "").replace(" ", "").replace(".", "").replace(",", ".").strip()
@@ -204,7 +282,8 @@ class JanelaProdutos(ctk.CTkToplevel):
     def extrair_valor_float(self, campo):
         texto = campo.get().replace("R$", "").replace(" ", "").replace(".", "").replace(",", ".")
         try:
-            return float(texto)
+            # Script 41: Arredonda para 2 casas para evitar o "decimal infinito"
+            return round(float(texto), 2)
         except:
             return 0.0
 
@@ -215,6 +294,7 @@ class JanelaProdutos(ctk.CTkToplevel):
         self.ent_validade.delete(0, "end")
         self.ent_qnt.delete(0, "end")
         self.ent_min.delete(0, "end")
+        self.ent_min.insert(0, "20") # Script 41: Restaura o padrão de 20
         self.ent_custo.delete(0, "end")
         self.ent_venda.delete(0, "end")
         
@@ -244,8 +324,12 @@ class JanelaProdutos(ctk.CTkToplevel):
         self.ent_validade.insert(0, self.produto_atual['validade'])
         self.ent_qnt.insert(0, str(self.produto_atual['quantidade']))
         self.ent_min.insert(0, str(self.produto_atual['estoque_minimo']))
-        self.ent_custo.insert(0, str(self.produto_atual['preco_custo']))
-        self.ent_venda.insert(0, str(self.produto_atual['preco_venda']))
+
+        # Script 41: Formatação automática de preços ao carregar para edição (evita valores brutos como 1.0)
+        c = self.produto_atual['preco_custo']
+        v = self.produto_atual['preco_venda']
+        self.ent_custo.insert(0, f"R$ {c:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+        self.ent_venda.insert(0, f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
 
         self.btn_salvar.configure(text="🔄 Atualizar Produto", fg_color="blue")
 
@@ -276,6 +360,20 @@ class JanelaProdutos(ctk.CTkToplevel):
                 "preco_venda": self.extrair_valor_float(self.ent_venda),
                 "estoque_minimo": int(self.ent_min.get())
             }
+
+            # Script 41: Validação de preços irreais
+            if dados["preco_custo"] <= 0:
+                self.mostrar_feedback("❌ O Preço de Custo deve ser maior que zero.", "red")
+                return
+            
+            if dados["preco_venda"] <= dados["preco_custo"]:
+                self.mostrar_feedback("❌ Preço de Venda deve ser maior que o Custo.", "red")
+                return
+
+            if dados["estoque_minimo"] > 100 or len(str(dados["lote"])) > 10:
+                self.mostrar_feedback("❌ Dados fora do limite (Min: 100 | Lote: 10)", "red")
+                return
+
         except ValueError:
             messagebox.showwarning("Erro de Preenchimento", "Certifique-se que Quantidade e Preços são números válidos.")
             return
@@ -303,6 +401,8 @@ class JanelaProdutos(ctk.CTkToplevel):
             if sucesso:
                 self.mostrar_feedback(f"✅ Produto '{dados['nome']}' atualizado!", "green")
                 self.limpar_campos()
+            else:
+                self.mostrar_feedback("❌ Falha na atualização (Limite 100 ou Validade).")
         else:
             # Salvando no banco
             id_produto = salvar_produto(
@@ -314,3 +414,5 @@ class JanelaProdutos(ctk.CTkToplevel):
             if id_produto:
                 self.mostrar_feedback(f"✅ Produto cadastrado com ID: {id_produto}", "green")
                 self.limpar_campos()
+            else:
+                self.mostrar_feedback("❌ Falha no cadastro (Limite 100 ou Validade).")

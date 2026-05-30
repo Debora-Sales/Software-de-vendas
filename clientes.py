@@ -1,4 +1,5 @@
 import customtkinter as ctk
+import re
 from tkinter import messagebox
 from database import (
     salvar_cliente, 
@@ -271,6 +272,22 @@ class JanelaClientes(ctk.CTkToplevel):
         
         self.id_cliente_editando = self.cliente_atual['id']
         
+        # Script 41: Lógica para desmembrar o endereço único ao carregar para edição
+        endereco_total = self.cliente_atual['endereco'] or ""
+        rua = bairro = cidade = comp = ""
+
+        # Tenta separar o complemento (marcado pelo " - ")
+        if " - " in endereco_total:
+            parte_base, comp = endereco_total.split(" - ", 1)
+        else:
+            parte_base = endereco_total
+
+        # Tenta separar Rua, Bairro e Cidade (marcados por vírgula)
+        partes = [p.strip() for p in parte_base.split(",")]
+        if len(partes) >= 1: rua = partes[0]
+        if len(partes) >= 2: bairro = partes[1]
+        if len(partes) >= 3: cidade = partes[2]
+
         # Identificar se é PF ou PJ pela existência de CPF
         if self.cliente_atual['cpf'] and self.cliente_atual['cpf'].strip() != "":
             self.tabview.set("Pessoa Física")
@@ -278,7 +295,12 @@ class JanelaClientes(ctk.CTkToplevel):
             self.ent_cpf_pf.delete(0, "end"); self.ent_cpf_pf.insert(0, self.cliente_atual['cpf'])
             self.ent_telefone_pf.delete(0, "end"); self.ent_telefone_pf.insert(0, self.cliente_atual['telefone'])
             self.ent_email_pf.delete(0, "end"); self.ent_email_pf.insert(0, self.cliente_atual['email'])
-            self.ent_rua_pf.delete(0, "end"); self.ent_rua_pf.insert(0, self.cliente_atual['endereco'])
+            
+            # Preenche os campos de endereço PF
+            self.ent_rua_pf.delete(0, "end"); self.ent_rua_pf.insert(0, rua)
+            self.ent_bairro_pf.delete(0, "end"); self.ent_bairro_pf.insert(0, bairro)
+            self.ent_cidade_pf.delete(0, "end"); self.ent_cidade_pf.insert(0, cidade)
+            self.ent_comp_pf.delete(0, "end"); self.ent_comp_pf.insert(0, comp)
         else:
             self.tabview.set("Pessoa Jurídica")
             self.ent_nome_pj.delete(0, "end"); self.ent_nome_pj.insert(0, self.cliente_atual['nome'])
@@ -286,7 +308,12 @@ class JanelaClientes(ctk.CTkToplevel):
             self.ent_cnpj_pj.delete(0, "end"); self.ent_cnpj_pj.insert(0, self.cliente_atual['cnpj'] or "")
             self.ent_telefone_pj.delete(0, "end"); self.ent_telefone_pj.insert(0, self.cliente_atual['telefone'])
             self.ent_email_pj.delete(0, "end"); self.ent_email_pj.insert(0, self.cliente_atual['email'])
-            self.ent_rua_pj.delete(0, "end"); self.ent_rua_pj.insert(0, self.cliente_atual['endereco'])
+            
+            # Preenche os campos de endereço PJ
+            self.ent_rua_pj.delete(0, "end"); self.ent_rua_pj.insert(0, rua)
+            self.ent_bairro_pj.delete(0, "end"); self.ent_bairro_pj.insert(0, bairro)
+            self.ent_cidade_pj.delete(0, "end"); self.ent_cidade_pj.insert(0, cidade)
+            self.ent_comp_pj.delete(0, "end"); self.ent_comp_pj.insert(0, comp)
 
         self.btn_salvar.configure(text="🔄 Atualizar Cliente", fg_color="blue")
 
@@ -304,12 +331,9 @@ class JanelaClientes(ctk.CTkToplevel):
     def validar_e_salvar(self, tipo):
         if tipo == "PF":
             rua, bairro, cidade, comp = self.ent_rua_pf.get(), self.ent_bairro_pf.get(), self.ent_cidade_pf.get(), self.ent_comp_pf.get()
-            # Se for edição e o campo Bairro/Cidade estiver vazio (porque carregamos o endereço todo na Rua), 
-            # mantemos apenas o que está na Rua.
-            if bairro or cidade:
-                endereco_completo = f"{rua}, {bairro}, {cidade} - {comp}".strip(", -")
-            else:
-                endereco_completo = rua
+
+            # Script 41: Formatação padronizada (Rua, Bairro, Cidade - Complemento)
+            endereco_completo = f"{rua}, {bairro}, {cidade} - {comp}".strip(", -")
 
             dados = {
                 "nome": self.ent_nome_pf.get(),
@@ -322,10 +346,7 @@ class JanelaClientes(ctk.CTkToplevel):
             }
         else:
             rua, bairro, cidade, comp = self.ent_rua_pj.get(), self.ent_bairro_pj.get(), self.ent_cidade_pj.get(), self.ent_comp_pj.get()
-            if bairro or cidade:
-                endereco_completo_pj = f"{rua}, {bairro}, {cidade} - {comp}".strip(", -")
-            else:
-                endereco_completo_pj = rua
+            endereco_completo_pj = f"{rua}, {bairro}, {cidade} - {comp}".strip(", -")
 
             dados = {
                 "nome": self.ent_nome_pj.get(),
@@ -341,8 +362,10 @@ class JanelaClientes(ctk.CTkToplevel):
             self.mostrar_feedback("⚠️ Nome, Telefone e E-mail são obrigatórios.")
             return
 
-        if "@" not in dados["email"]:
-            self.mostrar_feedback("❌ E-mail inválido (falta '@').")
+        # Script 41: Validação rigorosa de e-mail (Ex: nome@dominio.com)
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, dados["email"]):
+            self.mostrar_feedback("❌ E-mail incompleto (ex: nome@gmail.com).")
             return
 
         if self.id_cliente_editando:

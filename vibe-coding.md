@@ -356,6 +356,26 @@ Abaixo do indicador de vendedores do mês, adicione modulos iguais porém repres
 Iremos adicionar um novo módulo para controle de estoque: 
 -Os estoquistas: Terão acesso ao terminal de cadastro de produtos e controle de estoque.
 -gerecniamento,inventário
--vai aparecer pra vendedor e estoquista esse módulo, o adm pode ter acesso também 
+-vai aparecer pra vendedor e estoquista esse módulo, o adm vai poder ter acesso 
 -entrada e saída de produtos
 -total de produtos
+
+
+# script 41
+
+TRATAMENTO DE ERROS:
+limite de estoque X + ou - falta deixar a mesma função e outro limite x
+ preenchimento correto de endereço, email X
+ajuste de  preço X
+saldo global????
+estoque minimo  X
+ painel
+ noção de id
+ --vai aparecer no momento de pesquisa, cadastro?????? como saber o id
+
+
+ # script 42
+
+botão de voltar 
+logout
+única jánela
