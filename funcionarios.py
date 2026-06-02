@@ -83,6 +83,7 @@ class JanelaFuncionarios(ctk.CTkToplevel):
         # Bindings para Máscaras e Validações
         self.ent_cpf.bind("<KeyRelease>", self.formatar_cpf)
         self.ent_nasc.bind("<KeyRelease>", self.formatar_data)
+        self.ent_salario.bind("<KeyRelease>", self.validar_salario_input) # Adicionado para validar entrada de salário
         self.ent_salario.bind("<FocusOut>", lambda e: self.formatar_moeda(self.ent_salario))
 
         # --- FRAME DE AÇÕES (BOTÕES) ---
@@ -143,6 +144,21 @@ class JanelaFuncionarios(ctk.CTkToplevel):
             f += n
         self.ent_nasc.delete(0, "end")
         self.ent_nasc.insert(0, f)
+
+    def validar_salario_input(self, event):
+        """
+        Valida o campo de salário para aceitar apenas números e limitar a 5 dígitos.
+        """
+        texto = self.ent_salario.get()
+        limpo = "".join(filter(str.isdigit, texto))
+        
+        if len(limpo) > 5:
+            limpo = limpo[:5]
+            self.mostrar_feedback("⚠️ Salário: Máximo de 5 dígitos numéricos.", "orange")
+            
+        if texto != limpo:
+            self.ent_salario.delete(0, "end")
+            self.ent_salario.insert(0, limpo)
 
     def formatar_moeda(self, entry):
         texto = entry.get().replace("R$", "").replace(" ", "").replace(".", "").replace(",", ".").strip()
