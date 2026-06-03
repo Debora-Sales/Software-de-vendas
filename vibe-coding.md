@@ -379,3 +379,9 @@ estoque minimo  X
 botão de voltar 
 logout
 única jánela
+
+# script 43 
+
+No módulo de relatórios, é necessário adicionar dois botões ao lado do botão "Atualizar relatórios"
+Botão de exportar dados para "PDF"
+Botão de exportar dados para "Excel"
