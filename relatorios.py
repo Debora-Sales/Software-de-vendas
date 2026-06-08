@@ -1,5 +1,11 @@
 import customtkinter as ctk
 from tkinter import messagebox
+import pandas as pd
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 from database import (
     obter_vendas_por_vendedor,
     obter_relatorio_lucro_db,
@@ -42,17 +48,42 @@ class JanelaRelatorios(ctk.CTkToplevel):
         self._setup_ui_historico()
         self._setup_ui_logistica()
 
-        # Botão de Ação Inferior
+        # --- FRAME DE AÇÕES INFERIORES (Script 43) ---
+        self.frame_acoes_finais = ctk.CTkFrame(self, fg_color="transparent")
+        self.frame_acoes_finais.pack(pady=25)
+
+        self.btn_pdf = ctk.CTkButton(
+            self.frame_acoes_finais,
+            text="📄 Exportar PDF",
+            height=50,
+            fg_color="#A52A2A",
+            hover_color="#800000",
+            font=("Roboto", 16, "bold"),
+            command=self.exportar_pdf
+        )
+        self.btn_pdf.pack(side="left", padx=10)
+
         self.btn_atualizar = ctk.CTkButton(
-            self, 
+            self.frame_acoes_finais, 
             text="🔄 ATUALIZAR RELATÓRIOS", 
             height=50, 
             fg_color="teal", 
             hover_color="#006d6d",
-            font=("Roboto", 18, "bold"),
+            font=("Roboto", 16, "bold"),
             command=self.carregar_dados
         )
-        self.btn_atualizar.pack(pady=25)
+        self.btn_atualizar.pack(side="left", padx=10)
+
+        self.btn_excel = ctk.CTkButton(
+            self.frame_acoes_finais,
+            text="Excel 📥",
+            height=50,
+            fg_color="#2E8B57",
+            hover_color="#1E6B47",
+            font=("Roboto", 16, "bold"),
+            command=self.exportar_excel
+        )
+        self.btn_excel.pack(side="left", padx=10)
 
         # Carregamento inicial automático
         self.carregar_dados()
@@ -202,3 +233,146 @@ class JanelaRelatorios(ctk.CTkToplevel):
 
         if not dados_logistica:
             ctk.CTkLabel(self.scroll_logistica, text="Nenhuma entrega pendente encontrada.", text_color="gray").pack(pady=40)
+
+    def exportar_pdf(self):
+        """Gera um PDF estilizado com cara de dashboard/relatório executivo."""
+        try:
+            dados_brutos = obter_historico_vendas_db()
+            if not dados_brutos:
+                messagebox.showwarning("Aviso", "Não há dados para exportar.")
+                return
+
+            nome_arquivo = "Dashboard_Vendas.pdf"
+            doc = SimpleDocTemplate(nome_arquivo, pagesize=landscape(A4))
+            elementos = []
+            estilos = getSampleStyleSheet()
+
+            # Título e Resumo
+            total_vendas = sum(item[4] for item in dados_brutos)
+            ticket_medio = total_vendas / len(dados_brutos)
+
+            elementos.append(Paragraph("XÔ SUJEIRA - DASHBOARD EXECUTIVO DE VENDAS", estilos['Title']))
+            elementos.append(Spacer(1, 12))
+            elementos.append(Paragraph(f"<b>Resumo Financeiro:</b> Total R$ {total_vendas:,.2f} | Ticket Médio: R$ {ticket_medio:,.2f} | Total de Registros: {len(dados_brutos)}", estilos['Normal']))
+            elementos.append(Spacer(1, 20))
+
+            # Preparação da Tabela
+            header = ["ID", "Vendedor", "Cliente", "Data", "Total (R$)", "Pagto", "Tipo", "Urgência", "Status"]
+            dados_tabela = [header]
+            
+            for item in dados_brutos:
+                linha = list(item)
+                linha[4] = f"{item[4]:,.2f}" # Formata valor
+                dados_tabela.append(linha)
+
+            t = Table(dados_tabela, repeatRows=1)
+            t.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.teal),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.white])
+            ]))
+
+            elementos.append(t)
+            doc.build(elementos)
+            messagebox.showinfo("Sucesso", f"Dashboard PDF gerado: {nome_arquivo}")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao gerar PDF: {e}")
+
+    def exportar_excel(self):
+        """Exporta para Excel com um resumo de KPIs estilizado e tabela formatada."""
+        try:
+            dados_historico = obter_historico_vendas_db()
+            if not dados_historico:
+                messagebox.showwarning("Aviso", "Não há dados para exportar.")
+                return
+
+            colunas = ["ID", "Vendedor", "Cliente", "Data", "Total", "Pagamento", "Tipo", "Urgência", "Status"]
+            df = pd.DataFrame(dados_historico, columns=colunas)
+            nome_arquivo = "Dashboard_Vendas.xlsx"
+
+            # Cálculos dos indicadores para o Dashboard
+            total_vendas = df["Total"].sum()
+            ticket_medio = df["Total"].mean()
+            total_pedidos = len(df)
+
+            with pd.ExcelWriter(nome_arquivo, engine='openpyxl') as writer:
+                # Inicia a tabela de dados na linha 8 para deixar o topo livre para o Dashboard
+                df.to_excel(writer, sheet_name='Dashboard', startrow=7, index=False)
+                
+                workbook = writer.book
+                worksheet = writer.sheets['Dashboard']
+
+                # --- CONFIGURAÇÃO DE ESTILOS ---
+                estilo_titulo = Font(name='Segoe UI', size=16, bold=True, color="004D4D")
+                estilo_header = Font(name='Segoe UI', size=11, bold=True, color="FFFFFF")
+                preenchimento_teal = PatternFill(start_color="008080", end_color="008080", fill_type="solid")
+                alinhamento_centro = Alignment(horizontal="center", vertical="center")
+                borda_fina = Border(left=Side(style='thin'), right=Side(style='thin'), 
+                                    top=Side(style='thin'), bottom=Side(style='thin'))
+
+                # --- TÍTULO PRINCIPAL ---
+                worksheet.merge_cells('A1:I1')
+                worksheet['A1'] = "XÔ SUJEIRA - RELATÓRIO GERENCIAL DE VENDAS"
+                worksheet['A1'].font = estilo_titulo
+                worksheet['A1'].alignment = alinhamento_centro
+
+                # --- CARDS DE INDICADORES (KPIs) ---
+                indicadores = [
+                    ("A3", "FATURAMENTO TOTAL", f"R$ {total_vendas:,.2f}", "A4"),
+                    ("D3", "TICKET MÉDIO", f"R$ {ticket_medio:,.2f}", "D4"),
+                    ("G3", "TOTAL DE PEDIDOS", str(total_pedidos), "G4")
+                ]
+
+                for pos_label, label, valor, pos_val in indicadores:
+                    worksheet[pos_label] = label
+                    worksheet[pos_label].font = Font(bold=True, size=10, color="666666")
+                    worksheet[pos_label].alignment = alinhamento_centro
+                    
+                    worksheet[pos_val] = valor
+                    worksheet[pos_val].font = Font(bold=True, size=14, color="D2691E") # Cor Chocolate/Laranja
+                    worksheet[pos_val].alignment = alinhamento_centro
+                    worksheet[pos_val].border = borda_fina
+
+                # --- FORMATAÇÃO DA TABELA DE VENDAS ---
+                worksheet['A7'] = "DETALHAMENTO DAS TRANSAÇÕES"
+                worksheet['A7'].font = Font(bold=True, color="008080")
+
+                # Estilizar o cabeçalho da tabela (Linha 8)
+                for col_num, _ in enumerate(colunas, 1):
+                    cell = worksheet.cell(row=8, column=col_num)
+                    cell.font = estilo_header
+                    cell.fill = preenchimento_teal
+                    cell.alignment = alinhamento_centro
+                    cell.border = borda_fina
+
+                # Formatação de conteúdo e moeda
+                for row in range(9, 9 + len(df)):
+                    for col in range(1, len(colunas) + 1):
+                        cell = worksheet.cell(row=row, column=col)
+                        cell.border = borda_fina
+                        if col == 5: # Coluna 'Total'
+                            cell.number_format = 'R$ #,##0.00'
+                        if col in [1, 4, 8, 9]: # ID, Data, Urgência e Status
+                            cell.alignment = alinhamento_centro
+
+                # --- AUTO-AJUSTE DAS COLUNAS ---
+                for column_cells in worksheet.columns:
+                    # Usamos a célula da linha 8 (index 7) para obter a letra da coluna, 
+                    # pois ela faz parte do cabeçalho e nunca está mesclada.
+                    column_letter = column_cells[7].column_letter
+                    
+                    max_length = 0
+                    for cell in column_cells[7:]: # Calcula o tamanho apenas do cabeçalho para baixo
+                        if cell.value:
+                            max_length = max(max_length, len(str(cell.value)))
+                    worksheet.column_dimensions[column_letter].width = max_length + 4
+
+            messagebox.showinfo("Sucesso", f"Dashboard Excel gerado com sucesso: {nome_arquivo}")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Falha ao gerar Excel: {e}")

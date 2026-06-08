@@ -346,12 +346,12 @@ Quando logarmos como Administrador, ele devera nos mostrar informações relevan
 - O administrador poderá alterar o nome dos de usurários de todos os usuários
 - O Administrador poderá alterar a senha dos logins de totos os usuários
 
-# script 39
+# script 
 
 Abaixo do indicador de vendedores do mês, adicione modulos iguais porém representando "Dia" e "Semestre". A ordem deverá ser "Dia" abaixo "Mês" e logo abaixo "Semestre".
 
 
-# script 40
+# script 
 
 Iremos adicionar um novo módulo para controle de estoque: 
 -Os estoquistas: Terão acesso ao terminal de cadastro de produtos e controle de estoque.
@@ -361,7 +361,7 @@ Iremos adicionar um novo módulo para controle de estoque:
 -total de produtos
 
 
-# script 41
+# script 
 
 TRATAMENTO DE ERROS:
 limite de estoque X + ou - falta deixar a mesma função e outro limite x
@@ -374,14 +374,19 @@ estoque minimo  X
  --vai aparecer no momento de pesquisa, cadastro?????? como saber o id
 
 
- # script 42
+ # script
 
 botão de voltar 
 logout
 única jánela
 
-# script 43 
+# script 
 
 No módulo de relatórios, é necessário adicionar dois botões ao lado do botão "Atualizar relatórios"
 Botão de exportar dados para "PDF"
 Botão de exportar dados para "Excel"
+
+# script 44
+Remover o acesso dos vendedores a guia de controle de estoque pois eles não precisam entrar nessa guia para fazer a baixa dos produtos, pois quando eles fazem as vendas, o material automaticamente é baixado do estoque
+
+

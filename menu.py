@@ -66,7 +66,7 @@ class abrir_menu(ctk.CTkToplevel):
             self.criar_botao("Clientes", self.abrir_clientes)
             self.criar_botao("Vendas", self.abrir_vendas)
 
-        if self.perfil in ["Administrador", "Vendedor", "Estoquista"]:
+        if self.perfil in ["Administrador", "Estoquista"]:
             self.criar_botao("Controle de Estoque", self.abrir_estoque)
 
         if self.perfil == "Administrador":
