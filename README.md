@@ -36,6 +36,7 @@ Este repositório faz parte da Unidade Curricular de desenvolvimento de sistemas
 
 * **Instituição:** SENAC Jaboticabal - SP
 * **Curso:** Técnico em Informática
+* **Estudante:** Leonardo
 * **Estudante:** Débora
 
 ---
