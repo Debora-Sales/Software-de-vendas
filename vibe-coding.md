@@ -386,7 +386,27 @@ No módulo de relatórios, é necessário adicionar dois botões ao lado do bot�
 Botão de exportar dados para "PDF"
 Botão de exportar dados para "Excel"
 
-# script 44
+# script 
 Remover o acesso dos vendedores a guia de controle de estoque pois eles não precisam entrar nessa guia para fazer a baixa dos produtos, pois quando eles fazem as vendas, o material automaticamente é baixado do estoque
 
+# script 
+problema do estoque minimo, o numero está inserido atumático, porém quando mudamos de id o 20 se mantém junto com o que estava
 
+
+# script 
+n conseguir excluir cliente
+
+# script 
+
+
+usando janelas sem precisar iniciar outra
+deixar em tela cheia quando iniciar a janela
+admin não pode dar saida no controle de estoque, só dá saida após realizar a venda
+
+# script 
+
+1-dois admin, tem que excluir o que está no menu de configurações
+2-erro de layout quando muda para pessoa jurídica a letra fica desalinhada com a label
+3-vendedor pode atualizar cliente, vendedor não consegue atualizar ele, ele tem permissão apenas de atualizar o cliente
+4-erro dos do . no email, só de ser @gmail.com, não tem nada além disso
+5-layout dos funcionarios deve seguir a mesma lógica dos clientes, tá muito distante

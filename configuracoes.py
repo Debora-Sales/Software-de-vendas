@@ -61,6 +61,9 @@ class JanelaConfiguracoes(ctk.CTkToplevel):
         self.entradas_usuario = {}
         
         for id_u, nome, senha, tipo in obter_todos_usuarios_db():
+            # Script 48 (Item 1): Remove o Admin principal da lista editável para evitar duplicidade
+            if nome == "Admin": continue
+            
             f = ctk.CTkFrame(self.scroll_users)
             f.pack(fill="x", pady=2)
             

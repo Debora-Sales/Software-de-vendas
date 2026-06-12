@@ -9,14 +9,9 @@ from database import (
     buscar_valor_frete_db
 )
 
-class JanelaVendas(ctk.CTkToplevel):
+class JanelaVendas(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent)
-
-        self.title("Sistema de Vendas - Xô Sujeira")
-        self.geometry("900x800")
-        self.resizable(False, False)
-        self.grab_set()
 
         # Estado da Venda
         self.carrinho = []
@@ -360,6 +355,6 @@ class JanelaVendas(ctk.CTkToplevel):
                 self.carrinho = []
                 self.cliente_selecionado = None
                 self.vendedor_atual = None
-                self.after(2000, self.destroy)
+                self.after(2000, self.atualizar_carrinho_ui) # Apenas limpa a UI em vez de destruir o frame
             else:
                 self.mostrar_feedback("❌ Erro ao registrar venda (Verifique estoque).")

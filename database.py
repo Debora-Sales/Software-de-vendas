@@ -154,11 +154,22 @@ def criar_tabelas():
                     (login, senha, tipo)
                 )
 
+        # Garantir que a tabela de vendedores existe (evitar conflito com versões antigas)
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS vendedores (
+            barcode TEXT PRIMARY KEY,
+            nome TEXT NOT NULL
+        )""")
+
         # Inserir um vendedor padrão para teste se não houver nenhum
-        cursor.execute("SELECT count(*) FROM vendedores")
-        if cursor.fetchone()[0] == 0:
-            cursor.execute("INSERT INTO vendedores (barcode, nome) VALUES (?, ?)", ("12345", "Vendedor Padrão"))
-            cursor.execute("INSERT INTO vendedores (barcode, nome) VALUES (?, ?)", ("54321", "Vendedor Premium"))
+        try:
+            cursor.execute("SELECT count(*) FROM vendedores")
+            if cursor.fetchone()[0] == 0:
+                cursor.execute("INSERT INTO vendedores (barcode, nome) VALUES (?, ?)", ("12345", "Vendedor Padrão"))
+                cursor.execute("INSERT INTO vendedores (barcode, nome) VALUES (?, ?)", ("54321", "Vendedor Premium"))
+        except sqlite3.OperationalError:
+            # Caso a tabela vendedores esteja com nome errado ou corrompida
+            pass
 
         # Migração: Garante que as novas colunas de logística existam em bancos de dados antigos
         cursor.execute("PRAGMA table_info(vendas)")
@@ -174,6 +185,8 @@ def criar_tabelas():
             cursor.execute("ALTER TABLE vendas ADD COLUMN urgencia TEXT DEFAULT 'Normal'")
         if "distancia" not in colunas:
             cursor.execute("ALTER TABLE vendas ADD COLUMN distancia TEXT")
+        if "forma_pagamento" not in colunas:
+            cursor.execute("ALTER TABLE vendas ADD COLUMN forma_pagamento TEXT")
 
         # Script 41: Migração para adicionar e-mail aos funcionários se não existir
         cursor.execute("PRAGMA table_info(funcionarios)")
@@ -296,8 +309,8 @@ def salvar_produto(nome, validade, quantidade, categoria, lote, preco_custo, pre
 def salvar_cliente(nome, endereco, telefone, cpf, cnpj, razao_social, email):
     conn = conectar()
 
-    # Script 41: Validação rigorosa de e-mail (exige user, @, dominio e .extensão)
-    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    # Script 48 (Item 4): Restrição rigorosa para aceitar apenas domínios terminados em .com
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$'
     if email and not re.match(email_regex, email):
         return None
 
@@ -489,8 +502,8 @@ def buscar_cliente_por_id(id_cliente):
 def atualizar_cliente_db(id_cliente, nome, endereco, telefone, cpf, cnpj, razao_social, email):
     conn = conectar()
 
-    # Script 41: Validação rigorosa de e-mail
-    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    # Script 48 (Item 4): Restrição rigorosa para aceitar apenas domínios terminados em .com
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$'
     if email and not re.match(email_regex, email):
         return False
 
@@ -553,8 +566,8 @@ def salvar_funcionario(nome, cpf, nascimento, estado_civil, endereco, cargo, sal
         messagebox.showerror("Erro", "Não foi possível gerar um ID único para o funcionário.")
         return None
 
-    # Script 41: Validação rigorosa de e-mail
-    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    # Script 48 (Item 4): Restrição rigorosa para aceitar apenas domínios terminados em .com
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$'
     if email and not re.match(email_regex, email):
         return None
 
@@ -600,8 +613,8 @@ def buscar_funcionario_por_id_func(id_func): # Busca por ID
     return None
 
 def atualizar_funcionario_db(id_func, nome, cpf, nascimento, estado_civil, endereco, cargo, salario, email): # Atualiza por ID
-    # Script 41: Validação rigorosa de e-mail
-    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    # Script 48 (Item 4): Restrição rigorosa para aceitar apenas domínios terminados em .com
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$'
     if email and not re.match(email_regex, email):
         return False
 
@@ -720,6 +733,7 @@ def registrar_venda_db(id_vendedor, id_cliente, valor_total, valor_frete, forma_
             conn.close()
             return id_venda
         except Exception as e:
+            print(f"ERRO AO REGISTRAR VENDA NO BANCO: {e}")
             conn.rollback()
             conn.close()
             return None

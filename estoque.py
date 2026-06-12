@@ -2,17 +2,12 @@ import customtkinter as ctk
 from tkinter import messagebox
 from database import ajustar_estoque_db, obter_totais_estoque_db, buscar_produto_por_id
 
-class JanelaEstoque(ctk.CTkToplevel):
+class JanelaEstoque(ctk.CTkFrame):
     def __init__(self, parent, perfil):
         super().__init__(parent)
 
-        self.title("Controle de Estoque - Xô Sujeira")
-        self.geometry("700x750")
-        self.resizable(False, False)
         self.perfil = perfil
         self.lista_movimentacao = []
-        self.grab_set()
-        self.focus()
 
         ctk.CTkLabel(self, text="📦 Movimentação de Lote (Entrada/Saída)", font=("Roboto", 24, "bold")).pack(pady=15)
 
@@ -80,11 +75,11 @@ class JanelaEstoque(ctk.CTkToplevel):
     def validar_quantidade(self, event):
         """Script 41: Impede a inserção de quantidades 'infinitas' ou inválidas na interface."""
         texto = self.ent_qtd.get()
-        
-        # Permite apenas números e um sinal de menos no início (para saídas)
+
+        # Script 47: Bloqueia o sinal de menos. Saídas manuais são proibidas (ocorrem via vendas).
         valido = ""
-        for i, char in enumerate(texto):
-            if char.isdigit() or (i == 0 and char == "-"):
+        for char in texto:
+            if char.isdigit():
                 valido += char
         
         if texto != valido:
@@ -92,16 +87,13 @@ class JanelaEstoque(ctk.CTkToplevel):
             self.ent_qtd.insert(0, valido)
             texto = valido
 
-        # Aplica o limite de 100 (positivo ou negativo para movimentação)
-        if texto and texto != "-":
+        # Aplica o limite de 100 para movimentação de entrada
+        if texto:
             try:
                 val = int(texto)
                 if val > 100:
                     self.ent_qtd.delete(0, "end")
                     self.ent_qtd.insert(0, "100")
-                elif val < -100:
-                    self.ent_qtd.delete(0, "end")
-                    self.ent_qtd.insert(0, "-100")
             except ValueError: pass
 
     def adicionar_a_lista(self):
@@ -123,8 +115,9 @@ class JanelaEstoque(ctk.CTkToplevel):
         if qtd_int == 0:
             return
 
-        if self.perfil == "Estoquista" and qtd_int < 0:
-            self.mostrar_feedback("🚫 Acesso Restrito: Estoquistas fazem apenas ENTRADAS.")
+        # Script 47: Admin e Estoquistas não podem dar saída manual.
+        if qtd_int < 0:
+            self.mostrar_feedback("🚫 Operação Bloqueada: Saídas de estoque ocorrem apenas via módulo de Vendas.")
             return
 
         prod = buscar_produto_por_id(id_int)

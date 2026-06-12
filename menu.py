@@ -24,8 +24,14 @@ class abrir_menu(ctk.CTkToplevel):
         super().__init__(parent)
 
         self.title("Xô Sujeira - Menu Principal")
-        self.geometry("900x600")
-
+        
+        # Script 47 (Item 2): Iniciar em tela cheia (Maximizado)
+        self.after(0, lambda: self.state('zoomed'))
+        
+        # Atalhos para Fullscreen total (opcional para experiência imersiva)
+        self.bind("<F11>", lambda e: self.attributes("-fullscreen", not self.attributes("-fullscreen")))
+        self.bind("<Escape>", lambda e: self.attributes("-fullscreen", False))
+        
         self.perfil = perfil_usuario
 
         self.frame_menu = ctk.CTkFrame(
@@ -38,18 +44,21 @@ class abrir_menu(ctk.CTkToplevel):
 
         caminho_logo = os.path.join(os.path.dirname(__file__), "logo.png")
 
-        self.img_logo = ctk.CTkImage(
-            Image.open(caminho_logo),
-            size=(100, 100)
-        )
+        if os.path.exists(caminho_logo):
+            self.img_logo = ctk.CTkImage(
+                Image.open(caminho_logo),
+                size=(100, 100)
+            )
 
-        self.lbl_logo_menu = ctk.CTkLabel(
-            self.frame_menu,
-            image=self.img_logo,
-            text=""
-        )
+            self.lbl_logo_menu = ctk.CTkLabel(
+                self.frame_menu,
+                image=self.img_logo,
+                text=""
+            )
 
-        self.lbl_logo_menu.pack(pady=(20, 10))
+            self.lbl_logo_menu.pack(pady=(20, 10))
+        else:
+            self.img_logo = None
 
         self.label_titulo = ctk.CTkLabel(
             self.frame_menu,
@@ -113,6 +122,11 @@ class abrir_menu(ctk.CTkToplevel):
         if self.perfil == "Administrador":
             self.label_welcome.configure(text="Painel de Controle Administrativo", font=("Roboto", 24, "bold"))
             self._setup_dashboard_adm()
+
+    def limpar_conteudo(self):
+        """Script 47: Limpa o frame de conteúdo para exibir uma nova funcionalidade."""
+        for widget in self.frame_conteudo.winfo_children():
+            widget.destroy()
 
     def _setup_dashboard_adm(self):
         """Constrói a interface de rankings e alertas para o Administrador."""
@@ -201,22 +215,30 @@ class abrir_menu(ctk.CTkToplevel):
         btn.pack(pady=10)
 
     def abrir_produtos(self):
-        JanelaProdutos(self)
+        self.limpar_conteudo()
+        JanelaProdutos(self.frame_conteudo).pack(fill="both", expand=True)
     
     def abrir_clientes(self):
-        JanelaClientes(self, self.perfil)
+        self.limpar_conteudo()
+        JanelaClientes(self.frame_conteudo, self.perfil).pack(fill="both", expand=True)
 
     def abrir_vendas(self):
-        JanelaVendas(self)
+        self.limpar_conteudo()
+        JanelaVendas(self.frame_conteudo).pack(fill="both", expand=True)
 
     def abrir_funcionarios(self):
-        JanelaFuncionarios(self)
+        self.limpar_conteudo()
+        JanelaFuncionarios(self.frame_conteudo).pack(fill="both", expand=True)
 
     def abrir_relatorios(self):
-        JanelaRelatorios(self)
+        self.limpar_conteudo()
+        # JanelaRelatorios deve ser convertida para Frame similar aos outros
+        JanelaRelatorios(self.frame_conteudo).pack(fill="both", expand=True)
 
     def abrir_configuracoes(self):
-        JanelaConfiguracoes(self)
+        self.limpar_conteudo()
+        JanelaConfiguracoes(self.frame_conteudo).pack(fill="both", expand=True)
 
     def abrir_estoque(self):
-        JanelaEstoque(self, self.perfil)
+        self.limpar_conteudo()
+        JanelaEstoque(self.frame_conteudo, self.perfil).pack(fill="both", expand=True)

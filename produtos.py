@@ -8,16 +8,9 @@ from database import (
     deletar_produto_db
 )
 
-class JanelaProdutos(ctk.CTkToplevel):
+class JanelaProdutos(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(parent)
-
-        self.title("Cadastro de Produtos - Xô Sujeira")
-        self.geometry("750x850")
-        self.resizable(False, False)
-
-        self.grab_set()
-        self.focus()
 
         # Estado
         self.id_produto_editando = None
@@ -49,41 +42,45 @@ class JanelaProdutos(ctk.CTkToplevel):
         # --- FRAME DO FORMULÁRIO ---
         self.frame_form = ctk.CTkFrame(self)
         self.frame_form.pack(padx=20, pady=10, fill="both", expand=True)
+        
+        # Script 47: Centralizador responsivo para ajustar layout em tela cheia ou janela
+        self.centro_form = ctk.CTkFrame(self.frame_form, fg_color="transparent")
+        self.centro_form.pack(expand=True, pady=10)
 
         # Campos com Labels
-        ctk.CTkLabel(self.frame_form, text="Nome do Produto:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_nome = self.criar_entry(self.frame_form, "Ex: Detergente Neutro 500ml")
+        ctk.CTkLabel(self.centro_form, text="Nome do Produto:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_nome = self.criar_entry(self.centro_form, "Ex: Detergente Neutro 500ml")
         self.ent_nome.pack(pady=(0, 10))
         self.ent_nome.bind("<KeyRelease>", self.validar_nome)
 
-        ctk.CTkLabel(self.frame_form, text="Categoria:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_categoria = self.criar_entry(self.frame_form, "Ex: Limpeza, Higiene")
+        ctk.CTkLabel(self.centro_form, text="Categoria:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_categoria = self.criar_entry(self.centro_form, "Ex: Limpeza, Higiene")
         self.ent_categoria.pack(pady=(0, 10))
         self.ent_categoria.bind("<KeyRelease>", self.validar_categoria)
 
-        ctk.CTkLabel(self.frame_form, text="Lote:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_lote = self.criar_entry(self.frame_form, "Apenas números")
+        ctk.CTkLabel(self.centro_form, text="Lote:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_lote = self.criar_entry(self.centro_form, "Apenas números")
         self.ent_lote.pack(pady=(0, 10))
 
-        ctk.CTkLabel(self.frame_form, text="Data de Validade:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_validade = self.criar_entry(self.frame_form, "DD/MM/AAAA")
+        ctk.CTkLabel(self.centro_form, text="Data de Validade:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_validade = self.criar_entry(self.centro_form, "DD/MM/AAAA")
         self.ent_validade.pack(pady=(0, 10))
 
-        ctk.CTkLabel(self.frame_form, text="Quantidade em Estoque:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_qnt = self.criar_entry(self.frame_form, "0 a 100")
+        ctk.CTkLabel(self.centro_form, text="Quantidade em Estoque:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_qnt = self.criar_entry(self.centro_form, "0 a 100")
         self.ent_qnt.pack(pady=(0, 10))
 
-        ctk.CTkLabel(self.frame_form, text="Estoque Mínimo (Padrão 20):", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_min = self.criar_entry(self.frame_form, "Quantidade para aviso")
+        ctk.CTkLabel(self.centro_form, text="Estoque Mínimo (Padrão 20):", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_min = self.criar_entry(self.centro_form, "Quantidade para aviso")
         self.ent_min.pack(pady=(0, 10))
         self.ent_min.insert(0, "20") # Script 41: Valor padrão inicial
 
-        ctk.CTkLabel(self.frame_form, text="Preço de Custo:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_custo = self.criar_entry(self.frame_form, "Ex: 1.00")
+        ctk.CTkLabel(self.centro_form, text="Preço de Custo:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_custo = self.criar_entry(self.centro_form, "Ex: 1.00")
         self.ent_custo.pack(pady=(0, 10))
 
-        ctk.CTkLabel(self.frame_form, text="Preço de Venda:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_venda = self.criar_entry(self.frame_form, "Ex: 2.00")
+        ctk.CTkLabel(self.centro_form, text="Preço de Venda:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_venda = self.criar_entry(self.centro_form, "Ex: 2.00")
         self.ent_venda.pack(pady=(0, 10))
 
         # Script 41: Refinamento de bindings para validação em tempo real
@@ -323,6 +320,7 @@ class JanelaProdutos(ctk.CTkToplevel):
         self.ent_lote.insert(0, self.produto_atual['lote'])
         self.ent_validade.insert(0, self.produto_atual['validade'])
         self.ent_qnt.insert(0, str(self.produto_atual['quantidade']))
+        self.ent_min.delete(0, "end")
         self.ent_min.insert(0, str(self.produto_atual['estoque_minimo']))
 
         # Script 41: Formatação automática de preços ao carregar para edição (evita valores brutos como 1.0)

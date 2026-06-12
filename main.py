@@ -14,11 +14,14 @@ criar_tabelas()
 
 caminho_logo = os.path.join(os.path.dirname(__file__), "logo.png")
 
-imagem_logo = ctk.CTkImage(
-    light_image=Image.open(caminho_logo),
-    dark_image=Image.open(caminho_logo),
-    size=(120, 120)
-)
+if os.path.exists(caminho_logo):
+    imagem_logo = ctk.CTkImage(
+        light_image=Image.open(caminho_logo),
+        dark_image=Image.open(caminho_logo),
+        size=(120, 120)
+    )
+else:
+    imagem_logo = None
 
 
 def acao_login(event=None):
@@ -76,13 +79,14 @@ frame.pack(
     expand=True
 )
 
-label_imagem = ctk.CTkLabel(
-    master=frame,
-    image=imagem_logo,
-    text=""
-)
+if imagem_logo:
+    label_imagem = ctk.CTkLabel(
+        master=frame,
+        image=imagem_logo,
+        text=""
+    )
 
-label_imagem.pack(pady=(20, 10))
+    label_imagem.pack(pady=(20, 10))
 
 titulo = ctk.CTkLabel(
     frame,

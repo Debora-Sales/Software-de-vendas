@@ -8,16 +8,9 @@ from database import (
     deletar_cliente_db
 )
 
-class JanelaClientes(ctk.CTkToplevel):
+class JanelaClientes(ctk.CTkFrame):
     def __init__(self, parent, perfil_usuario):
         super().__init__(parent)
-
-        self.title("Cadastro de Clientes - Xô Sujeira")
-        self.geometry("750x850")
-        self.resizable(False, False)
-
-        self.grab_set()
-        self.focus()
 
         # Estado
         self.perfil = perfil_usuario
@@ -55,19 +48,22 @@ class JanelaClientes(ctk.CTkToplevel):
         self.tab_pj = self.tabview.add("Pessoa Jurídica")
 
         # --- UI PESSOA FÍSICA ---
-        ctk.CTkLabel(self.tab_pf, text="Nome Completo:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_nome_pf = self.criar_entry(self.tab_pf, "Nome Completo"); self.ent_nome_pf.pack(pady=(0, 5))
+        self.centro_pf = ctk.CTkFrame(self.tab_pf, fg_color="transparent")
+        self.centro_pf.pack(expand=True)
+
+        ctk.CTkLabel(self.centro_pf, text="Nome Completo:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_nome_pf = self.criar_entry(self.centro_pf, "Nome Completo"); self.ent_nome_pf.pack(pady=(0, 5))
         
-        ctk.CTkLabel(self.tab_pf, text="CPF (Apenas números):", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_cpf_pf = self.criar_entry(self.tab_pf, "CPF (Apenas números)"); self.ent_cpf_pf.pack(pady=(0, 5))
+        ctk.CTkLabel(self.centro_pf, text="CPF (Apenas números):", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_cpf_pf = self.criar_entry(self.centro_pf, "CPF (Apenas números)"); self.ent_cpf_pf.pack(pady=(0, 5))
         
-        ctk.CTkLabel(self.tab_pf, text="Telefone (XX) XXXXX-XXXX):", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_telefone_pf = self.criar_entry(self.tab_pf, "Telefone (XX) XXXXX-XXXX"); self.ent_telefone_pf.pack(pady=(0, 5))
+        ctk.CTkLabel(self.centro_pf, text="Telefone (XX) XXXXX-XXXX):", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_telefone_pf = self.criar_entry(self.centro_pf, "Telefone (XX) XXXXX-XXXX"); self.ent_telefone_pf.pack(pady=(0, 5))
         
-        ctk.CTkLabel(self.tab_pf, text="E-mail:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_email_pf = self.criar_entry(self.tab_pf, "E-mail"); self.ent_email_pf.pack(pady=(0, 5))
+        ctk.CTkLabel(self.centro_pf, text="E-mail:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_email_pf = self.criar_entry(self.centro_pf, "E-mail"); self.ent_email_pf.pack(pady=(0, 5))
         
-        self.frame_end_pf = ctk.CTkFrame(self.tab_pf, fg_color="transparent")
+        self.frame_end_pf = ctk.CTkFrame(self.centro_pf, fg_color="transparent")
         self.frame_end_pf.pack(pady=5)
         
         ctk.CTkLabel(self.frame_end_pf, text="Rua/Avenida:", font=("Roboto", 12, "bold")).grid(row=0, column=0, padx=5, sticky="w")
@@ -87,25 +83,28 @@ class JanelaClientes(ctk.CTkToplevel):
         self.ent_cpf_pf.bind("<KeyRelease>", self.formatar_cpf)
 
         # --- UI PESSOA JURÍDICA ---
-        ctk.CTkLabel(self.tab_pj, text="Nome Fantasia:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_nome_pj = self.criar_entry(self.tab_pj, "Nome Fantasia"); self.ent_nome_pj.pack(pady=(0, 5))
-        ctk.CTkLabel(self.tab_pj, text="Razão Social:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_razao_pj = self.criar_entry(self.tab_pj, "Razão Social"); self.ent_razao_pj.pack(pady=(0, 5))
-        ctk.CTkLabel(self.tab_pj, text="CNPJ (Apenas números):", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_cnpj_pj = self.criar_entry(self.tab_pj, "CNPJ (Apenas números)"); self.ent_cnpj_pj.pack(pady=(0, 5))
-        ctk.CTkLabel(self.tab_pj, text="Telefone:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_telefone_pj = self.criar_entry(self.tab_pj, "Telefone"); self.ent_telefone_pj.pack(pady=(0, 5))
-        ctk.CTkLabel(self.tab_pj, text="E-mail:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_email_pj = self.criar_entry(self.tab_pj, "E-mail"); self.ent_email_pj.pack(pady=(0, 5))
+        self.centro_pj = ctk.CTkFrame(self.tab_pj, fg_color="transparent")
+        self.centro_pj.pack(expand=True)
 
-        self.frame_end_pj = ctk.CTkFrame(self.tab_pj, fg_color="transparent")
+        ctk.CTkLabel(self.centro_pj, text="Nome Fantasia:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_nome_pj = self.criar_entry(self.centro_pj, "Nome Fantasia"); self.ent_nome_pj.pack(pady=(0, 5))
+        ctk.CTkLabel(self.centro_pj, text="Razão Social:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_razao_pj = self.criar_entry(self.centro_pj, "Razão Social"); self.ent_razao_pj.pack(pady=(0, 5))
+        ctk.CTkLabel(self.centro_pj, text="CNPJ (Apenas números):", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_cnpj_pj = self.criar_entry(self.centro_pj, "CNPJ (Apenas números)"); self.ent_cnpj_pj.pack(pady=(0, 5))
+        ctk.CTkLabel(self.centro_pj, text="Telefone:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_telefone_pj = self.criar_entry(self.centro_pj, "Telefone"); self.ent_telefone_pj.pack(pady=(0, 5))
+        ctk.CTkLabel(self.centro_pj, text="E-mail:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_email_pj = self.criar_entry(self.centro_pj, "E-mail"); self.ent_email_pj.pack(pady=(0, 5))
+
+        self.frame_end_pj = ctk.CTkFrame(self.centro_pj, fg_color="transparent")
         self.frame_end_pj.pack(pady=5)
         
         ctk.CTkLabel(self.frame_end_pj, text="Rua/Avenida:", font=("Roboto", 12, "bold")).grid(row=0, column=0, padx=5, sticky="w")
-        self.ent_rua_pj = self.criar_entry(self.frame_end_pj, "Rua/Avenida", 220); self.ent_rua_pj.grid(row=1, column=0, padx=5)
+        self.ent_rua_pj = self.criar_entry(self.frame_end_pj, "Rua/Avenida", 215); self.ent_rua_pj.grid(row=1, column=0, padx=5)
         
         ctk.CTkLabel(self.frame_end_pj, text="Bairro:", font=("Roboto", 12, "bold")).grid(row=0, column=1, padx=5, sticky="w")
-        self.ent_bairro_pj = self.criar_entry(self.frame_end_pj, "Bairro", 220); self.ent_bairro_pj.grid(row=1, column=1, padx=5)
+        self.ent_bairro_pj = self.criar_entry(self.frame_end_pj, "Bairro", 215); self.ent_bairro_pj.grid(row=1, column=1, padx=5)
         
         ctk.CTkLabel(self.frame_end_pj, text="Cidade:", font=("Roboto", 12, "bold")).grid(row=2, column=0, padx=5, pady=(5,0), sticky="w")
         self.ent_cidade_pj = self.criar_entry(self.frame_end_pj, "Cidade", 220); self.ent_cidade_pj.grid(row=3, column=0, padx=5, pady=(0,5))
@@ -237,6 +236,7 @@ class JanelaClientes(ctk.CTkToplevel):
         self.txt_resultado.configure(state="disabled")
 
         self.id_cliente_editando = None
+        self.cliente_atual = None
         self.btn_salvar.configure(text="💾 Salvar / Atualizar", fg_color="green", state="normal")
         self.btn_excluir.configure(state="disabled")
 
@@ -252,6 +252,10 @@ class JanelaClientes(ctk.CTkToplevel):
         if cliente:
             self.preparar_edicao()
             self.btn_cancelar.pack(side="left", padx=5) 
+
+            # Script 46 & 35: Habilita exclusão apenas para Administradores
+            if self.perfil == "Administrador":
+                self.btn_excluir.configure(state="normal")
             
             self.txt_resultado.configure(state="normal")
             self.txt_resultado.delete("1.0", "end")
@@ -316,7 +320,7 @@ class JanelaClientes(ctk.CTkToplevel):
             self.ent_comp_pj.delete(0, "end"); self.ent_comp_pj.insert(0, comp)
 
         self.btn_salvar.configure(text="🔄 Atualizar Cliente", fg_color="blue")
-
+        
     def confirmar_exclusao(self):
         if self.cliente_atual and messagebox.askyesno("Confirmar Exclusão", f"Deseja excluir o cliente {self.cliente_atual['nome']}?"):
             if deletar_cliente_db(self.cliente_atual['id']):
@@ -362,10 +366,10 @@ class JanelaClientes(ctk.CTkToplevel):
             self.mostrar_feedback("⚠️ Nome, Telefone e E-mail são obrigatórios.")
             return
 
-        # Script 41: Validação rigorosa de e-mail (Ex: nome@dominio.com)
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        # Script 48 (Item 4): Restrição rigorosa para aceitar apenas domínios terminados em .com
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$'
         if not re.match(email_regex, dados["email"]):
-            self.mostrar_feedback("❌ E-mail incompleto (ex: nome@gmail.com).")
+            self.mostrar_feedback("❌ E-mail inválido. O domínio deve terminar obrigatoriamente em .com")
             return
 
         if self.id_cliente_editando:

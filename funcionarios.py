@@ -8,17 +8,12 @@ from database import (
     deletar_funcionario_db
 )
 
-class JanelaFuncionarios(ctk.CTkToplevel): 
-    def __init__(self, parent):
+class JanelaFuncionarios(ctk.CTkFrame): 
+    def __init__(self, parent, perfil_usuario="Vendedor"):
         super().__init__(parent)
 
-        self.title("Cadastro de Funcionários - Xô Sujeira")
-        self.geometry("750x850")
-        self.resizable(False, False)
-        self.grab_set()
-        self.focus()
-
         # Estado
+        self.perfil = perfil_usuario
         self.id_editando = None
         self.func_atual = None
 
@@ -48,36 +43,40 @@ class JanelaFuncionarios(ctk.CTkToplevel):
         self.frame_form = ctk.CTkFrame(self)
         self.frame_form.pack(padx=20, pady=10, fill="both", expand=True)
 
-        ctk.CTkLabel(self.frame_form, text="Nome Completo:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_nome = self.criar_entry(self.frame_form, "Nome")
+        # Script 48 (Item 5): Frame centralizador para alinhar o formulário como na aba de clientes
+        self.centro_func = ctk.CTkFrame(self.frame_form, fg_color="transparent")
+        self.centro_func.pack(expand=True)
+
+        ctk.CTkLabel(self.centro_func, text="Nome Completo:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_nome = self.criar_entry(self.centro_func, "Nome")
         self.ent_nome.pack(pady=(0, 8))
 
-        ctk.CTkLabel(self.frame_form, text="CPF:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_cpf = self.criar_entry(self.frame_form, "000.000.000-00")
+        ctk.CTkLabel(self.centro_func, text="CPF:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_cpf = self.criar_entry(self.centro_func, "000.000.000-00")
         self.ent_cpf.pack(pady=(0, 8))
 
-        ctk.CTkLabel(self.frame_form, text="Data de Nascimento:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_nasc = self.criar_entry(self.frame_form, "DD/MM/AAAA")
+        ctk.CTkLabel(self.centro_func, text="Data de Nascimento:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_nasc = self.criar_entry(self.centro_func, "DD/MM/AAAA")
         self.ent_nasc.pack(pady=(0, 8))
 
-        ctk.CTkLabel(self.frame_form, text="Estado Civil:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_civil = self.criar_entry(self.frame_form, "Ex: Solteiro(a)")
+        ctk.CTkLabel(self.centro_func, text="Estado Civil:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_civil = self.criar_entry(self.centro_func, "Ex: Solteiro(a)")
         self.ent_civil.pack(pady=(0, 8))
 
-        ctk.CTkLabel(self.frame_form, text="Endereço:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_end = self.criar_entry(self.frame_form, "Rua, Bairro, Cidade")
+        ctk.CTkLabel(self.centro_func, text="Endereço:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_end = self.criar_entry(self.centro_func, "Rua, Bairro, Cidade")
         self.ent_end.pack(pady=(0, 8))
 
-        ctk.CTkLabel(self.frame_form, text="Cargo:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_cargo = self.criar_entry(self.frame_form, "Ex: Vendedor")
+        ctk.CTkLabel(self.centro_func, text="Cargo:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_cargo = self.criar_entry(self.centro_func, "Ex: Vendedor")
         self.ent_cargo.pack(pady=(0, 8))
 
-        ctk.CTkLabel(self.frame_form, text="E-mail Pessoal:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_email = self.criar_entry(self.frame_form, "exemplo@gmail.com")
+        ctk.CTkLabel(self.centro_func, text="E-mail Pessoal:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_email = self.criar_entry(self.centro_func, "exemplo@gmail.com")
         self.ent_email.pack(pady=(0, 8))
 
-        ctk.CTkLabel(self.frame_form, text="Salário:", font=("Roboto", 12, "bold")).pack(anchor="w", padx=150)
-        self.ent_salario = self.criar_entry(self.frame_form, "R$ 0,00")
+        ctk.CTkLabel(self.centro_func, text="Salário:", font=("Roboto", 12, "bold")).pack(anchor="w")
+        self.ent_salario = self.criar_entry(self.centro_func, "R$ 0,00")
         self.ent_salario.pack(pady=(0, 8))
 
         # Bindings para Máscaras e Validações
@@ -171,7 +170,7 @@ class JanelaFuncionarios(ctk.CTkToplevel):
         except ValueError: pass
 
     def limpar(self):
-        for e in [self.ent_nome, self.ent_cpf, self.ent_nasc, self.ent_civil, self.ent_end, self.ent_cargo, self.ent_salario]:
+        for e in [self.ent_nome, self.ent_cpf, self.ent_nasc, self.ent_civil, self.ent_end, self.ent_cargo, self.ent_email, self.ent_salario]:
             e.delete(0, "end")
         self.ent_busca_id.delete(0, "end")
         
@@ -240,11 +239,16 @@ class JanelaFuncionarios(ctk.CTkToplevel):
         if not nome or not cpf or not email:
             self.mostrar_feedback("⚠️ Nome, CPF e E-mail são obrigatórios.")
             return
+            
+        # Script 48 (Item 3): Vendedor não pode atualizar dados de funcionários (ele mesmo ou outros)
+        if self.id_editando and self.perfil != "Administrador":
+            self.mostrar_feedback("❌ Acesso negado: Apenas Administradores alteram funcionários.", "red")
+            return
 
-        # Script 41: Validação rigorosa de e-mail (Ex: nome@dominio.com)
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        # Script 48 (Item 4): Restrição rigorosa para aceitar apenas domínios terminados em .com
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$'
         if not re.match(email_regex, email):
-            self.mostrar_feedback("❌ E-mail incompleto (ex: nome@gmail.com).")
+            self.mostrar_feedback("❌ E-mail inválido. O domínio deve terminar obrigatoriamente em .com")
             return
             
         try:
